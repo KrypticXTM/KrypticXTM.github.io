@@ -1,0 +1,4480 @@
+<!DOCTYPE html>
+<!--
+  Active Projects — Copyright Tim Murray 2026.
+  Personal, non-commercial use is free. You may not resell, sublicense,
+  or redistribute this file for a fee.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Active Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@500;600&family=Patrick+Hand&family=Permanent+Marker&display=swap" rel="stylesheet" />
+<style>
+
+  :root {
+    --bg: #0b0d12; --panel: #151922; --ink: #f2f4f8; --muted: #8b94a7; --line: #2a3140;
+    --gap: 8px; --pad: 7px; --tile-pad: 6px; --row-h: 40px; --font-sm: 11px; --font-md: 12.5px;
+    --phase-min: 400px; --cork-h: 560px;
+  }
+  body.density-compact {
+    --gap: 5px; --pad: 5px; --tile-pad: 4px; --row-h: 32px; --font-sm: 10px; --font-md: 12px;
+    --phase-min: 340px; --cork-h: 480px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(900px 500px at 0% 0%, #2a1b4d55, transparent 60%),
+      radial-gradient(800px 420px at 100% 0%, #0e3a4f55, transparent 55%), var(--bg);
+    color: var(--ink); min-height: 100vh;
+  }
+  #boardRoot { position: relative; min-height: 100vh; padding: 10px 12px 48px; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; position:relative; z-index:5; }
+  h1 { margin:0; font-size:17px; letter-spacing:-0.03em; }
+  .sub { color:var(--muted); font-size:11px; margin-top:2px; }
+  .actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .pill, button.tool, .seg button, .filter-chip {
+    background:#222836; border:1px solid var(--line); color:var(--muted);
+    border-radius:999px; padding:5px 9px; font-size:11px;
+  }
+  button.tool { cursor:pointer; color:#e8ecf4; background:#2a3346; }
+  button.tool:hover { border-color:#4b5872; }
+  button.tool.primary { background:linear-gradient(180deg,#6d5efc,#5546e0); border:none; color:#fff; }
+  button.tool.active, .filter-chip.active, .seg button.active { background:#3a3014; color:#fbbf24; border-color:#6a5420; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+  .seg button { border:none; border-radius:0; cursor:pointer; color:#c5ccd8; }
+  .seg button + button { border-left:1px solid var(--line); }
+  .filters { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
+  .today {
+    background:
+      radial-gradient(520px 160px at 0% 0%, #fbbf2430, transparent 55%),
+      radial-gradient(420px 140px at 100% 0%, #a78bfa28, transparent 50%),
+      linear-gradient(180deg,#241c38,#151a28 55%,#12161f);
+    border:1px solid color-mix(in srgb, #fbbf24 38%, #3a4560);
+    border-radius:14px; padding:10px 12px; margin-bottom:10px;
+    transition:border-color .15s, box-shadow .15s;
+    box-shadow:inset 0 1px 0 #fbbf2422, 0 8px 28px #0005;
+  }
+  .today.drag-over { border-color:#fbbf24; box-shadow:0 0 0 2px #fbbf2455, 0 8px 28px #0005; }
+  .today-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+  .today-title {
+    font-size:14px; letter-spacing:0.14em; text-transform:uppercase;
+    color:#fcd34d; font-weight:800;
+    text-shadow:0 0 18px #fbbf2444;
+  }
+  .today-date {
+    color:#fde68a; font-size:13px; font-weight:650;
+    background:color-mix(in srgb, #fbbf24 14%, #1a2030);
+    border:1px solid color-mix(in srgb, #fbbf24 28%, #3a4560);
+    border-radius:999px; padding:3px 10px;
+  }
+  .today-list { display:flex; flex-direction:column; gap:7px; min-height:36px; }
+  .today-list > .today-expand { margin-top:2px; margin-bottom:2px; flex:0 0 auto; order:unset; }
+  .today-empty {
+    border:1px dashed color-mix(in srgb, #fbbf24 35%, #4a5568); border-radius:10px;
+    color:#d6c28a; padding:12px; font-size:13.5px; text-align:center;
+    background:color-mix(in srgb, #fbbf24 6%, transparent);
+  }
+  .today-row {
+    display:grid; grid-template-columns:18px 22px minmax(90px,1.15fr) 34px minmax(110px,1.2fr) auto auto auto;
+    gap:8px; align-items:center;
+    background:linear-gradient(165deg,
+      color-mix(in srgb, var(--accent,#7c5cff) 26%, #1d2433),
+      color-mix(in srgb, var(--accent,#7c5cff) 8%, #12161f));
+    border:1px solid color-mix(in srgb, var(--accent,#7c5cff) 42%, #2a3140);
+    border-radius:10px;
+    padding:7px 10px; min-height:calc(var(--row-h) + 10px); cursor:pointer; position:relative; overflow:hidden;
+    box-shadow:inset 0 1px 0 color-mix(in srgb, var(--accent,#7c5cff) 22%, transparent);
+    transition:border-color .15s, box-shadow .15s, transform .1s;
+  }
+  .today-row:hover {
+    border-color:color-mix(in srgb, var(--accent,#7c5cff) 70%, #44506a);
+    transform:translateY(-1px);
+    box-shadow:0 4px 14px color-mix(in srgb, var(--accent,#7c5cff) 20%, #0000),
+      inset 0 1px 0 color-mix(in srgb, var(--accent,#7c5cff) 30%, transparent);
+  }
+  .today-row > * { align-self:center; margin:0; line-height:1.2; }
+  .today-row .prio, .today-row .today-due { display:inline-flex; align-items:center; justify-content:center; height:24px; line-height:1; box-sizing:border-box; }
+  .today-due { font-size:12px; font-weight:750; border-radius:999px; padding:0 9px; white-space:nowrap; height:24px; }
+  .today-due.missing { color:#a8b0c0; border:1px dashed #5a6578; background:transparent; }
+  .today-timer { display:inline-flex; align-items:center; gap:5px; height:28px; }
+  .today-timer button {
+    background:color-mix(in srgb, var(--accent,#7c5cff) 18%, #222836); border:1px solid color-mix(in srgb, var(--accent,#7c5cff) 35%, var(--line));
+    color:#e8ecf4; border-radius:7px; font-size:12px;
+    padding:0 8px; height:28px; line-height:1; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+  }
+  .today-timer .readout {
+    font-variant-numeric:tabular-nums; font-size:16px; font-weight:800; letter-spacing:0.03em; color:#fcd34d;
+    min-width:54px; text-align:center; line-height:1; display:inline-flex; align-items:center; justify-content:center; height:28px;
+    text-shadow:0 0 10px #fbbf2444;
+  }
+  .today-timer input[type="number"] {
+    height:28px; width:46px; font-size:13px; font-weight:700; text-align:center; line-height:1;
+    background:#12161f; border:1px solid color-mix(in srgb, #fbbf24 25%, var(--line)); color:var(--ink); border-radius:7px; padding:0 3px;
+  }
+  .today-expand {
+    margin-top:6px;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--accent,#7c5cff) 12%, #161b28), #12161f);
+    border:1px solid color-mix(in srgb, var(--accent,#7c5cff) 40%, #3a4560);
+    border-radius:12px; padding:10px 12px;
+  }
+  .today-expand h3 { margin:0 0 6px; font-size:16px; font-weight:750; }
+  .today-expand .meta { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:8px; align-items:center; }
+  .today-expand .meta .chip { height:22px; margin:0; font-size:11px; }
+  .today-expand .grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .today-expand label { display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#c5ccd8; margin:0 0 3px; }
+  .today-expand input, .today-expand textarea, .today-expand select {
+    width:100%; background:#0f131b; border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:7px 9px; font:inherit; font-size:13px;
+  }
+  .today-expand textarea { min-height:48px; resize:vertical; }
+  .timer-hero {
+    margin:6px 0 8px; padding:10px; border-radius:10px;
+    border:1px solid color-mix(in srgb, #fbbf24 35%, #4b5872);
+    background:linear-gradient(180deg,#2a2438,#141a28);
+  }
+  .timer-hero .label { font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:#fcd34d; font-weight:800; margin-bottom:6px; }
+  .timer-hero .row { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .timer-hero input[type="number"] { width:68px; font-size:15px; font-weight:700; text-align:center; }
+  .timer-hero .big-readout { font-variant-numeric:tabular-nums; font-size:26px; font-weight:800; letter-spacing:0.04em; min-width:78px; color:#fcd34d; }
+  .today-expand .actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .today-row::before {
+    content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+    background:var(--accent,#7c5cff); box-shadow:0 0 12px color-mix(in srgb, var(--accent,#7c5cff) 55%, transparent);
+  }
+  .today-row.selected {
+    border-color:#fbbf24;
+    box-shadow:0 0 0 2px #fbbf2488, inset 0 0 0 1px #fbbf2444;
+    background:linear-gradient(165deg,
+      color-mix(in srgb, var(--accent,#7c5cff) 36%, #2a2438),
+      color-mix(in srgb, #fbbf24 12%, #171c28));
+  }
+  .today-row .handle { cursor:grab; color:#9aa3b2; font-size:12px; text-align:center; }
+  .today-row .icon {
+    width:22px; height:22px; border-radius:7px; display:grid; place-items:center; font-size:12px;
+    background:color-mix(in srgb, var(--accent) 28%, #12161f); border:1px solid color-mix(in srgb, var(--accent) 45%, #2a3140);
+  }
+  .today-row .name {
+    font-size:14.5px; font-weight:750; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    display:flex; align-items:center; gap:5px; line-height:1.2; min-height:24px;
+    text-shadow:0 1px 0 color-mix(in srgb, var(--accent,#7c5cff) 20%, transparent);
+  }
+  body.density-compact .today-row .name { font-size:13.5px; }
+  .prio {
+    font-size:11px; font-weight:800; border-radius:999px; padding:0 7px; text-align:center; width:fit-content;
+    height:22px; display:inline-flex; align-items:center; justify-content:center; line-height:1; box-sizing:border-box;
+  }
+  .today-row .prio { font-size:12px; height:24px; padding:0 8px; }
+  .prio.p1 { color:#fecaca; background:#3a1d24; }
+  .prio.p2 { color:#fde68a; background:#3a3218; }
+  .prio.p3 { color:#bfdbfe; background:#1d2a3a; }
+  .today-bubble-input {
+    width:100%; min-width:0; background:#243044; border:1px solid #4a5a78; color:#e8eef8;
+    border-radius:999px; padding:4px 10px; font-size:13px; height:28px; line-height:1.15; outline:none;
+  }
+  .today-bubble-input:focus { border-color:#fbbf24; box-shadow:0 0 0 2px #fbbf2433; }
+  .today-bubble-input::placeholder { color:#8b94a7; }
+  .today-row .remove {
+    background:color-mix(in srgb, #f87171 14%, #222836); border:1px solid #5a3a42; color:#fecaca;
+    border-radius:7px; font-size:11px; font-weight:650; padding:3px 8px; cursor:pointer; height:28px;
+  }
+  .today-row .remove:hover { border-color:#f87171; }
+
+  .layout { display:grid; grid-template-columns:1fr 300px; gap:8px; align-items:stretch; }
+  .layout > div { min-height:100%; display:flex; flex-direction:column; }
+  .board-wrap { flex:1; overflow-x:auto; padding-bottom:2px; }
+  .section-label {
+    font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);
+    margin:0 0 6px; display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .phases {
+    display:grid; grid-template-columns:repeat(var(--phase-cols,4), minmax(130px,1fr));
+    gap:var(--gap); min-width:640px; align-items:stretch; flex:1; min-height:var(--phase-min);
+  }
+  .phase {
+    background:color-mix(in srgb, var(--panel) 90%, black); border:1px solid var(--line);
+    border-radius:10px; padding:var(--pad); min-height:var(--phase-min); height:100%;
+    transition:border-color .15s, background .15s;
+  }
+  .phase.drag-over { border-color:#6d5efc; background:#1a2030; }
+  .phase.phase-done { border-style:dashed; opacity:0.92; }
+  .phase[data-lane="ideas"] {
+    background:color-mix(in srgb, #fbbf24 9%, #151922);
+    border-color:color-mix(in srgb, #fbbf24 32%, var(--line));
+  }
+  .phase[data-lane="todo"] {
+    background:color-mix(in srgb, #38bdf8 9%, #151922);
+    border-color:color-mix(in srgb, #38bdf8 32%, var(--line));
+  }
+  .phase[data-lane="doing"] {
+    background:color-mix(in srgb, #a78bfa 11%, #151922);
+    border-color:color-mix(in srgb, #a78bfa 36%, var(--line));
+  }
+  .phase[data-lane="review"] {
+    background:color-mix(in srgb, #fb923c 9%, #151922);
+    border-color:color-mix(in srgb, #fb923c 32%, var(--line));
+  }
+  .phase[data-lane="done"] {
+    background:color-mix(in srgb, #34d399 8%, #151922);
+    border-color:color-mix(in srgb, #34d399 28%, var(--line));
+  }
+  .phase[data-lane="ideas"] .phase-title { color:#fcd34d; }
+  .phase[data-lane="todo"] .phase-title { color:#7dd3fc; }
+  .phase[data-lane="doing"] .phase-title { color:#c4b5fd; }
+  .phase[data-lane="review"] .phase-title { color:#fdba74; }
+  .phase[data-lane="done"] .phase-title { color:#6ee7b7; }
+  .phase-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; padding:0 2px; }
+  .phase-title { font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); font-weight:650; }
+  .count { background:#262c3a; border-radius:999px; padding:1px 6px; font-size:10px; color:#c5ccd8; }
+  .tiles { display:flex; flex-direction:column; gap:4px; min-height:36px; align-items:stretch; }
+  .ideas-quick-add {
+    margin-top:6px; display:flex; flex-direction:column; gap:5px; flex:0 0 auto;
+  }
+  .ideas-quick-btn {
+    width:100%; cursor:pointer; border-radius:8px; padding:7px 8px;
+    border:1px dashed color-mix(in srgb, #fbbf24 45%, #3a4560);
+    background:color-mix(in srgb, #fbbf24 8%, transparent);
+    color:#fcd34d; font:inherit; font-size:12px; font-weight:700;
+    letter-spacing:0.02em; text-align:center;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .ideas-quick-btn:hover {
+    border-color:#fbbf24; background:color-mix(in srgb, #fbbf24 16%, #1a2030);
+    color:#fde68a;
+  }
+  .ideas-quick-form {
+    display:flex; gap:4px; align-items:center;
+  }
+  .ideas-quick-form[hidden] { display:none !important; }
+  .ideas-quick-input {
+    flex:1; min-width:0; height:30px;
+    background:#12161f; border:1px solid color-mix(in srgb, #fbbf24 40%, #3a4560);
+    color:var(--ink); border-radius:8px; padding:4px 8px; font:inherit; font-size:12.5px; font-weight:650;
+    outline:none;
+  }
+  .ideas-quick-input:focus {
+    border-color:#fbbf24; box-shadow:0 0 0 2px #fbbf2433;
+  }
+  .ideas-quick-input::placeholder { color:#9a8b5a; font-weight:500; }
+  .ideas-quick-go {
+    height:30px; padding:0 10px; border-radius:8px; cursor:pointer;
+    border:none; background:linear-gradient(180deg,#fbbf24,#d97706); color:#1a1200;
+    font:inherit; font-size:12px; font-weight:800;
+  }
+  .ideas-quick-go:hover { filter:brightness(1.06); }
+  .tile {
+    background:linear-gradient(165deg,
+      color-mix(in srgb, var(--accent,#7c5cff) 28%, #1d2433),
+      color-mix(in srgb, var(--accent,#7c5cff) 10%, #12161f));
+    border:1px solid color-mix(in srgb, var(--accent,#7c5cff) 42%, #2a3140);
+    border-radius:8px;
+    padding:var(--tile-pad); cursor:grab; position:relative; overflow:hidden; user-select:none;
+    height:fit-content; align-self:start; width:100%;
+    transition:transform .1s, border-color .15s, box-shadow .15s, background .15s;
+    box-shadow:inset 0 1px 0 color-mix(in srgb, var(--accent,#7c5cff) 22%, transparent);
+  }
+  .tile:hover {
+    border-color:color-mix(in srgb, var(--accent,#7c5cff) 65%, #44506a);
+    transform:translateY(-1px);
+    box-shadow:0 4px 14px color-mix(in srgb, var(--accent,#7c5cff) 22%, #0000),
+      inset 0 1px 0 color-mix(in srgb, var(--accent,#7c5cff) 30%, transparent);
+  }
+  .tile:active { cursor:grabbing; }
+  .tile.selected {
+    border-color:#a78bfa;
+    box-shadow:0 0 0 2px #6d5efc99, inset 0 0 0 1px #6d5efc55;
+    background:linear-gradient(165deg,
+      color-mix(in srgb, var(--accent,#7c5cff) 38%, #222a44),
+      color-mix(in srgb, #6d5efc 16%, #171c28));
+  }
+  .tile.dragging { opacity:0.4; cursor:grabbing; }
+  body.tile-is-dragging, body.tile-is-dragging * { cursor:grabbing !important; }
+  /* Ideas column: single-line title only */
+  .tile.tile-idea {
+    padding:5px 8px 5px 10px;
+  }
+  .tile.tile-idea .tile-top { align-items:center; gap:0; }
+  .tile.tile-idea .tile-main { min-width:0; flex:1; }
+  .tile.tile-idea .tile-title {
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin:0; line-height:1.25; max-width:100%;
+  }
+  .tile.tile-idea .icon,
+  .tile.tile-idea .tile-meta,
+  .tile.tile-idea .push-row,
+  .tile.tile-idea .sticky-pins,
+  .tile.tile-idea .handle { display:none !important; }
+  /* Quiet non-ideas tiles: no badge chrome / no arrow push row */
+  .tile .tile-meta { display:none; }
+  .tile .push-row { display:none; }
+  .tile .handle { display:none; }
+  .tile .tile-top { align-items:center; }
+  .tile.on-today { box-shadow:inset 0 0 0 1px #fbbf2444; }
+  .tile.sticky-drop, .today-row.sticky-drop {
+    border-color:#fbbf24 !important;
+    box-shadow:0 0 0 2px #fbbf2488, 0 8px 22px #fbbf2433;
+    background:color-mix(in srgb, #fbbf24 12%, #171c28);
+    transform:scale(1.015);
+    z-index:6;
+  }
+  .today-row.sticky-drop { min-height:calc(var(--row-h) + 14px); padding-top:8px; padding-bottom:8px; }
+  .tile.sticky-drop::after, .today-row.sticky-drop::after {
+    content:"Drop to pin"; position:absolute; right:8px; top:6px; z-index:2;
+    font-size:9px; font-weight:800; letter-spacing:0.06em; text-transform:uppercase;
+    color:#fbbf24; background:#3a3014ee; border:1px solid #6a5420; border-radius:999px;
+    padding:2px 7px; pointer-events:none; line-height:1.2;
+  }
+  /* sticky-is-dragging = drop targets live (pointer outside cork only; set in JS) */
+  body.sticky-is-dragging .tile,
+  body.sticky-is-dragging .today-row {
+    outline:1px dashed #fbbf2455; outline-offset:3px;
+    transition:outline-color .12s, box-shadow .12s, transform .1s, min-height .12s, padding .12s, background .12s;
+  }
+  body.sticky-is-dragging .tile {
+    min-height:52px; padding:calc(var(--tile-pad) + 5px) calc(var(--tile-pad) + 4px);
+  }
+  body.sticky-is-dragging .today-row {
+    min-height:calc(var(--row-h) + 12px); padding-top:8px; padding-bottom:8px;
+  }
+  body.sticky-is-dragging .today-list { min-height:44px; gap:8px; }
+  body.sticky-is-dragging .tiles { gap:8px; min-height:48px; }
+  .sticky-pin.chip-selected {
+    outline:2px solid #6d5efc; outline-offset:1px; box-shadow:0 0 0 1px #6d5efc55;
+  }
+  .sticky.drag-follow {
+    position:fixed !important; z-index:10000 !important; margin:0;
+    pointer-events:none !important; left:0; top:0;
+  }
+  .sticky.drag-follow .multi-drag-badge {
+    position:absolute; right:-8px; top:-8px; min-width:20px; height:20px; padding:0 5px;
+    border-radius:999px; background:#6d5efc; color:#fff; font:700 11px/20px system-ui,sans-serif;
+    text-align:center; box-shadow:0 2px 6px #0008; pointer-events:none;
+  }
+  .tile::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent,#7c5cff); box-shadow:0 0 10px color-mix(in srgb, var(--accent,#7c5cff) 55%, transparent); }
+  .tile-top { display:flex; gap:5px; align-items:flex-start; }
+  .icon {
+    width:18px; height:18px; border-radius:5px; display:grid; place-items:center;
+    background:color-mix(in srgb, var(--accent) 22%, #12161f);
+    border:1px solid color-mix(in srgb, var(--accent) 35%, #2a3140); font-size:9px; flex:0 0 auto; line-height:1;
+  }
+  .tile-main { min-width:0; flex:1 1 auto; }
+  .tile-title {
+    font-size:14.5px; font-weight:750; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    line-height:1.25; letter-spacing:-0.015em; color:#f7f8fc;
+    text-shadow:0 1px 0 color-mix(in srgb, var(--accent,#7c5cff) 25%, transparent);
+  }
+  body.density-compact .tile-title { font-size:13.5px; }
+  .tile-meta { display:flex; gap:3px; flex-wrap:wrap; margin-top:3px; align-items:center; align-content:center; }
+  .chip {
+    display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; width:auto; height:18px;
+    align-self:center; font-size:9px; font-weight:700; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:999px; padding:0 6px; line-height:1; background:#242a38; color:#c9d1e0; vertical-align:middle; box-sizing:border-box;
+  }
+  .chip.cat { color:var(--accent); background:color-mix(in srgb, var(--accent) 16%, #1a2030); }
+  .chip.loc { color:#9ed0ff; background:#1d2a38; text-transform:none; letter-spacing:0; font-weight:550; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+  .chip.p1 { color:#fecaca; background:#3a1d24; }
+  .chip.p2 { color:#fde68a; background:#3a3218; }
+  .chip.p3 { color:#bfdbfe; background:#1d2a3a; }
+  .chip.today { color:#fbbf24; background:#3a3014; text-transform:none; }
+  .chip.due { color:#fda4af; background:#3a1d24; text-transform:none; letter-spacing:0; font-weight:600; }
+  .chip.due.soon { color:#fdba74; background:#3a2a14; }
+  .chip.due.ok { color:#86efac; background:#163225; }
+  .sticky-pins { display:flex; flex-wrap:wrap; gap:3px; margin-top:4px; }
+  .sticky-pin {
+    font-size:9px; padding:2px 6px; border-radius:5px; max-width:100%; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; cursor:grab; border:1px solid #0003; line-height:1.2;
+  }
+  .sticky-pin.yellow { background:#fde68a; color:#422006; }
+  .sticky-pin.pink { background:#fbcfe8; color:#831843; }
+  .sticky-pin.blue { background:#bfdbfe; color:#1e3a8a; }
+  .sticky-pin.green { background:#bbf7d0; color:#14532d; }
+  .sticky-pin.orange { background:#fed7aa; color:#9a3412; }
+  .sticky-pin.purple { background:#e9d5ff; color:#581c87; }
+  .sticky-pin.mint { background:#a7f3d0; color:#065f46; }
+  .timer-box { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+  .timer-box input[type="number"] { width:64px; }
+  .timer-readout { font-variant-numeric:tabular-nums; font-size:12px; color:#e8ecf4; min-width:48px; }
+  .handle { cursor:grab; color:#667085; font-size:10px; padding:0 2px; line-height:1; flex:0 0 auto; align-self:flex-start; }
+  .handle:active { cursor:grabbing; }
+  .push-row { display:flex; gap:3px; margin-top:4px; }
+  .push-row button {
+    flex:1; background:#222836; border:1px solid var(--line); color:#c5ccd8; border-radius:6px;
+    font-size:9px; padding:2px 0; cursor:pointer; line-height:1.15;
+  }
+  .push-row button:hover { color:#fff; border-color:#4b5872; }
+  .empty { border:1px dashed #3a4254; border-radius:8px; color:#7f8899; padding:10px 6px; font-size:11px; text-align:center; }
+  .side {
+    background:color-mix(in srgb, var(--panel) 92%, black); border:1px solid var(--line); border-radius:10px;
+    padding:8px; position:sticky; top:8px; height:100%; min-height:var(--phase-min); align-self:stretch;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .side-tabs { display:flex; gap:3px; }
+  .side-tabs button {
+    flex:1; background:#1a2030; border:1px solid var(--line); color:#9aa3b2; border-radius:8px;
+    padding:5px 4px; font-size:10px; cursor:pointer;
+  }
+  .side-tabs button.active { color:#fff; border-color:#6d5efc; background:#222a40; }
+  .side-pane { flex:1; min-height:0; overflow:auto; }
+  .editor h2 { margin:0 0 2px; font-size:13px; }
+  .editor .hint { color:var(--muted); font-size:11px; margin-bottom:6px; }
+  .editor label { display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin:6px 0 3px; }
+  .editor input, .editor textarea, .editor select {
+    width:100%; background:#12161f; border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:6px 8px; font:inherit; font-size:12px;
+  }
+  .editor input:focus, .editor textarea:focus, .editor select:focus { outline:none; border-color:#6d5efc; }
+  .editor textarea { min-height:48px; resize:vertical; }
+  .editor textarea.tall { min-height:72px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .editor-actions { display:flex; gap:5px; flex-wrap:wrap; margin-top:8px; }
+  .editor-empty { color:var(--muted); font-size:12px; line-height:1.45; padding:24px 8px; text-align:center; }
+  .checkrow { display:flex; align-items:center; gap:6px; margin-top:6px; color:#e8ecf4; font-size:12px; }
+  .checkrow input { width:auto; }
+  /* Below cork-section so stickies that overhang the lower cork stay grabbable */
+  .today { position:relative; z-index:3; }
+  .layout { position:relative; z-index:3; }
+  .cork-section {
+    /* z-index auto so .cork-head can stack above #stickyLayer (40) and keep sliders clickable */
+    position:relative; z-index:auto; margin-bottom:12px;
+    border-radius:10px; overflow:visible; padding:11px;
+    /* Solid professional dark wood-brown frame around the whole board */
+    background:
+      linear-gradient(180deg, #5a3c26 0%, #4a301c 18%, #3a2414 55%, #2a1810 100%);
+    border:2px solid #1a1008;
+    box-shadow:
+      0 16px 42px rgba(0,0,0,.62),
+      0 1px 0 rgba(180,140,100,.22),
+      inset 0 1px 0 rgba(200,160,110,.28),
+      inset 0 -2px 5px rgba(0,0,0,.5),
+      inset 2px 0 5px rgba(0,0,0,.22),
+      inset -2px 0 5px rgba(0,0,0,.26);
+  }
+  .cork-head {
+    display:flex; align-items:center; gap:8px;
+    padding:7px 10px;
+    background:linear-gradient(180deg, rgba(42,28,18,.92), rgba(26,16,10,.96));
+    border:1px solid rgba(0,0,0,.4);
+    border-bottom:none;
+    border-radius:5px 5px 0 0;
+    box-shadow:inset 0 1px 0 rgba(232,213,184,.1);
+    /* Above #stickyLayer so post-it size/font sliders stay clickable when notes sit high/large */
+    position:relative; z-index:50;
+  }
+  .cork-toolbar {
+    display:flex; gap:6px; flex-wrap:wrap; align-items:center; justify-content:flex-start;
+    flex:1 1 auto; width:100%; min-width:0;
+  }
+  .cork-toolbar .lock-defaults {
+    height:26px; padding:0 10px; font-size:11px; font-weight:700;
+    border-radius:999px; cursor:pointer; white-space:nowrap;
+    color:#fde68a; background:#3a3014; border:1px solid #6a5420;
+  }
+  .cork-toolbar .lock-defaults:hover { border-color:#8a6a30; background:#4a3a18; }
+  .cork-toolbar .lock-defaults.just-locked {
+    color:#052e16; background:#86efac; border-color:#22c55e;
+  }
+  .cork-toolbar select.sticky-font {
+    height:26px; font-size:11px; border:1px solid #5a4630; border-radius:6px;
+    background:#1a140e; color:#f2e6d4; padding:0 6px; cursor:pointer; max-width:110px;
+  }
+  .cork-toolbar .sticky-slider {
+    display:inline-flex; align-items:center; gap:5px; height:26px;
+    border:1px solid #5a4630; border-radius:6px; background:#1a140e;
+    padding:0 8px 0 6px; color:#c4a882;
+  }
+  .cork-toolbar .sticky-slider .slider-ico {
+    font-size:11px; font-weight:800; line-height:1; min-width:12px; text-align:center;
+    color:#fde68a; user-select:none; pointer-events:none;
+  }
+  .cork-toolbar .sticky-slider.note .slider-ico { font-size:10px; }
+  /* Tall hit target (26px); visual track stays thin via ::-webkit-slider-runnable-track */
+  .cork-toolbar .sticky-slider input[type="range"] {
+    -webkit-appearance:none; appearance:none; width:96px; height:26px;
+    background:transparent; border-radius:999px; outline:none; cursor:pointer; margin:0; padding:0;
+    vertical-align:middle;
+  }
+  .cork-toolbar .sticky-slider input[type="range"]::-webkit-slider-runnable-track {
+    height:4px; background:#3a2818; border-radius:999px;
+  }
+  .cork-toolbar .sticky-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%;
+    background:#fbbf24; border:1px solid #6a5420; cursor:pointer; box-shadow:0 1px 3px #0006;
+    margin-top:-5px; /* center thumb on 4px track */
+  }
+  .cork-toolbar .sticky-slider input[type="range"]::-moz-range-thumb {
+    width:14px; height:14px; border-radius:50%;
+    background:#fbbf24; border:1px solid #6a5420; cursor:pointer;
+  }
+  .cork-toolbar .sticky-slider input[type="range"]::-moz-range-track {
+    height:4px; background:#3a2818; border-radius:999px; border:none;
+  }
+  .cork-toolbar .swatch { width:20px; height:20px; border-radius:5px; border:1px solid #0004; cursor:pointer; padding:0; }
+  .cork-toolbar .swatch.yellow { background:#fde68a; }
+  .cork-toolbar .swatch.pink { background:#fbcfe8; }
+  .cork-toolbar .swatch.blue { background:#bfdbfe; }
+  .cork-toolbar .swatch.green { background:#bbf7d0; }
+  .cork-toolbar .swatch.orange { background:#fed7aa; }
+  .cork-toolbar .swatch.purple { background:#e9d5ff; }
+  .cork-toolbar .swatch.mint { background:#a7f3d0; }
+  .cork-toolbar .swatch.selected { outline:2px solid #fff; outline-offset:1px; }
+  .cork-toolbar .tool { height:26px; padding:0 10px; font-size:11px; }
+  .cork-stage {
+    position:relative; min-height:var(--cork-h); height:var(--cork-h);
+    border-radius:0 0 5px 5px; overflow:visible;
+    /* stacking context so #stickyLayer z-index is predictable across full height */
+    z-index:1;
+    border:1px solid rgba(0,0,0,.5);
+    border-top:1px solid rgba(12,8,4,.75);
+    box-shadow:
+      inset 0 2px 10px rgba(0,0,0,.42),
+      inset 0 0 0 1px rgba(90,60,35,.22);
+  }
+  .cork {
+    position:absolute; inset:0;
+    /* keep pe:auto so HTML5 chip→cork unattach drops still work */
+    border-radius:0 0 4px 4px;
+    background:
+      radial-gradient(circle at 18% 28%, #6b4a2a55 0 2px, transparent 3px),
+      radial-gradient(circle at 72% 58%, #5a3c2255 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 40% 80%, #7a553355 0 2px, transparent 3px),
+      linear-gradient(165deg, #6a472c 0%, #543420 45%, #3f2918 100%);
+  }
+  .cork.drag-over { outline:2px dashed #fbbf24; outline-offset:-6px; }
+  .cork-hint {
+    position:absolute; inset:0; display:grid; place-items:center; pointer-events:none;
+    color:#e8d5b888; font-size:12px; text-align:center; padding:16px; line-height:1.45;
+    letter-spacing:0.02em;
+  }
+  .trash-can {
+    /* Positioned onto cork-stage bottom-right via positionTrashCan() (boardRoot overlay, above stickies) */
+    position:absolute; z-index:45;
+    width:64px; height:78px; border:none; cursor:pointer;
+    background:transparent; padding:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end;
+    filter:drop-shadow(0 3px 6px #000a);
+    transition:transform .15s, filter .15s;
+    pointer-events:auto;
+  }
+  .trash-can:hover, .trash-can.hot {
+    transform:scale(1.1); filter:drop-shadow(0 0 12px #fbbf2488);
+  }
+  .trash-can .trash-svg {
+    width:48px; height:56px; display:block; overflow:visible;
+  }
+  .trash-can .trash-lid-g {
+    transform-box: fill-box;
+    transform-origin: 100% 90%;
+    transition: transform .28s cubic-bezier(.34,1.4,.64,1);
+  }
+  .trash-can.hot .trash-lid-g,
+  .trash-can.lid-open .trash-lid-g {
+    transform: translate(2px,-10px) rotate(42deg);
+  }
+  .trash-can.swallowing .trash-lid-g {
+    transform: translate(0,0) rotate(0deg);
+    transition: transform .22s ease-in;
+  }
+  .trash-can.shaking {
+    animation: trashShake .42s ease-in-out;
+  }
+  @keyframes trashShake {
+    0%, 100% { transform: scale(1.1) rotate(0deg) translateX(0); }
+    15% { transform: scale(1.12) rotate(-7deg) translateX(-3px); }
+    30% { transform: scale(1.14) rotate(8deg) translateX(4px); }
+    45% { transform: scale(1.12) rotate(-6deg) translateX(-3px); }
+    60% { transform: scale(1.11) rotate(5deg) translateX(2px); }
+    80% { transform: scale(1.1) rotate(-2deg) translateX(-1px); }
+  }
+  .trash-can .label { font-size:8px; color:#9aa3b2; margin-top:1px; letter-spacing:0.06em; text-transform:uppercase; }
+  .trash-toast {
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:#1a2030; border:1px solid #3a4560; color:#e8ecf4;
+    border-radius:999px; padding:8px 14px; font-size:12px; z-index:100;
+    box-shadow:0 8px 24px #000a; display:flex; gap:10px; align-items:center;
+  }
+  .trash-toast[hidden] { display:none; }
+  .trash-toast button {
+    background:#3a3014; border:1px solid #6a5420; color:#fbbf24;
+    border-radius:999px; padding:4px 10px; font-size:11px; cursor:pointer;
+  }
+
+  /* ===== Cork folders ===== */
+  .cork-folder {
+    position:absolute; width:96px; height:86px;
+    pointer-events:auto; cursor:grab; user-select:none;
+    transform-origin:center bottom; z-index:1;
+    filter: drop-shadow(1px 3px 4px #0006);
+    transition: filter .15s, transform .18s;
+  }
+  .cork-folder:hover { filter: drop-shadow(2px 5px 8px #0008); }
+  .cork-folder.dragging { cursor:grabbing; opacity:0.95; filter: drop-shadow(4px 8px 14px #000a); }
+  .cork-folder.selected-folder {
+    outline:2px solid #f59e0b; outline-offset:3px; border-radius:6px;
+  }
+  .cork-folder.drop-target {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 10px #fbbf24aa) drop-shadow(2px 5px 8px #0008);
+  }
+  .cork-folder.drop-target .folder-icon { animation: folder-bounce .35s ease; }
+  .cork-folder.opening .folder-icon {
+    animation: folder-open .38s cubic-bezier(.34,1.4,.64,1) forwards;
+  }
+  .cork-folder .folder-icon {
+    display:block; width:78px; height:66px; margin:0 auto;
+    pointer-events:none; line-height:0;
+  }
+  .cork-folder .folder-icon svg {
+    width:100%; height:100%; display:block;
+    filter: drop-shadow(0 1px 0 #fff6) drop-shadow(0 2px 3px #0004);
+  }
+  .cork-folder.open .folder-icon {
+    transform: perspective(140px) rotateX(-14deg) scale(1.05);
+  }
+  @keyframes folder-open {
+    0% { transform: scale(1) rotate(0); }
+    40% { transform: scale(1.12) rotate(-3deg); }
+    100% { transform: perspective(120px) rotateX(-12deg) scale(1.05); }
+  }
+  @keyframes folder-bounce {
+    0%,100% { transform: scale(1); }
+    40% { transform: scale(1.14) translateY(-2px); }
+    70% { transform: scale(0.96); }
+  }
+  .cork-folder .folder-label {
+    display:block; margin-top:3px; text-align:center;
+    font:700 12.5px/1.25 "Segoe UI", system-ui, -apple-system, sans-serif;
+    letter-spacing:0.01em;
+    color:#1a1208;
+    text-shadow:0 1px 0 #fffaf0, 0 0 5px #fff8eecc;
+    background:linear-gradient(180deg, #fffaf0f2, #f0e2c4e8);
+    border:1px solid #b8956888;
+    border-radius:5px;
+    box-shadow:0 1px 2px #0003, inset 0 1px 0 #fffdf8;
+    max-width:92px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    padding:2px 5px; margin-left:auto; margin-right:auto;
+  }
+  .cork-folder .folder-label-input {
+    display:block; width:90px; margin:3px auto 0; text-align:center;
+    font:700 12.5px/1.25 "Segoe UI", system-ui, -apple-system, sans-serif;
+    border:1px solid #a88458; border-radius:5px; padding:2px 5px;
+    background:#fffaf0; color:#1a1208; outline:none;
+    box-shadow:0 0 0 2px #c9a87855;
+  }
+  .cork-folder .folder-count {
+    position:absolute; top:4px; right:8px;
+    min-width:16px; height:16px; padding:0 4px;
+    border-radius:999px; background:#8b5a2b; color:#fff;
+    font:700 10px/16px "Segoe UI", system-ui, sans-serif;
+    text-align:center; box-shadow:0 1px 2px #0005;
+    pointer-events:none;
+  }
+  .cork-folder .folder-count[hidden] { display:none; }
+  .cork-folder .folder-del {
+    position:absolute; top:-2px; left:2px; border:none; background:transparent;
+    color:#0007; cursor:pointer; font-size:12px; line-height:1; padding:2px 4px;
+    border-radius:4px; opacity:0; transition:opacity .12s; z-index:3;
+    font-family:"Segoe UI", system-ui, sans-serif;
+  }
+  .cork-folder:hover .folder-del, .cork-folder.selected-folder .folder-del { opacity:0.75; }
+  .cork-folder .folder-del:hover { background:#0002; color:#000; opacity:1; }
+  .sticky.filing-into {
+    transition: transform .42s cubic-bezier(.4,.05,.55,1), opacity .42s ease;
+    pointer-events:none !important; z-index:95 !important;
+  }
+  #folderPopover {
+    position:fixed; z-index:120; min-width:220px; max-width:320px; max-height:340px;
+    background:#2a2318ee; border:1px solid #8a6a30; border-radius:10px;
+    box-shadow:0 12px 36px #000a, 0 0 0 1px #0004;
+    padding:10px 10px 12px; color:#f5e6c8;
+    backdrop-filter: blur(8px);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  #folderPopover[hidden] { display:none; }
+  #folderPopover .fp-head { display:flex; align-items:center; gap:8px; justify-content:space-between; }
+  #folderPopover .fp-title {
+    font:700 13px/1.2 "Segoe UI", system-ui, sans-serif; color:#fde68a;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;
+  }
+  #folderPopover .fp-close {
+    border:none; background:#3a3014; color:#fbbf24; border-radius:6px;
+    width:24px; height:24px; cursor:pointer; font-size:14px; line-height:1;
+  }
+  #folderPopover .fp-close:hover { background:#4a3a18; }
+  #folderPopover .fp-list { overflow:auto; display:flex; flex-direction:column; gap:6px; max-height:260px; }
+  #folderPopover .fp-empty { font:500 12px/1.4 "Segoe UI", system-ui, sans-serif; color:#c4b48a; padding:8px 4px; }
+  #folderPopover .fp-sticky {
+    position:relative; border-radius:3px; padding:8px 10px 10px; cursor:grab;
+    font-family:"Patrick Hand", "Comic Neue", cursive; font-size:13px; line-height:1.3;
+    color:#1a1208; box-shadow:1px 2px 6px #0006; user-select:none;
+    word-break:break-word; min-height:36px;
+  }
+  #folderPopover .fp-sticky.yellow { background:#fde68a; }
+  #folderPopover .fp-sticky.pink { background:#fbcfe8; }
+  #folderPopover .fp-sticky.blue { background:#bfdbfe; }
+  #folderPopover .fp-sticky.green { background:#bbf7d0; }
+  #folderPopover .fp-sticky.orange { background:#fed7aa; }
+  #folderPopover .fp-sticky.purple { background:#e9d5ff; }
+  #folderPopover .fp-sticky.mint { background:#a7f3d0; }
+  #folderPopover .fp-sticky.dragging-out { opacity:0.55; }
+  #folderPopover .fp-hint { font:500 10px/1.3 "Segoe UI", system-ui, sans-serif; color:#a89870; }
+  #folderPopover .fp-actions { display:flex; gap:6px; flex-wrap:wrap; }
+  #folderPopover .fp-actions button {
+    flex:1; min-width:0; cursor:pointer;
+    background:#3a3014; border:1px solid #8a6a30; color:#fde68a;
+    border-radius:7px; padding:6px 10px; font:650 11.5px/1.2 "Segoe UI", system-ui, sans-serif;
+  }
+  #folderPopover .fp-actions button:hover { background:#4a3a18; border-color:#c9a44a; color:#fff8e7; }
+  #folderPopover .fp-actions button:disabled { opacity:0.45; cursor:default; }
+
+  /* Sticky layer is a full-boardRoot overlay (cork-% mapped to layer px).
+     That way notes that overhang the cork into Today/layout stay inside the layer's
+     border box and remain hit-testable — stage-sized layers + pe:none drop those hits.
+     pe:none on the layer; stickies re-enable pe:auto so empty areas pass through. */
+  #stickyLayer {
+    position:absolute; inset:0; width:auto; height:auto;
+    pointer-events:none; z-index:40;
+    overflow:visible;
+  }
+  .sticky {
+    position:absolute; width:148px; min-height:112px; padding:12px 12px 20px; border-radius:2px;
+    box-shadow:2px 4px 10px #0007, 0 1px 0 #fff6 inset;
+    font-family:"Patrick Hand", "Comic Neue", "Segoe Print", "Comic Sans MS", cursive;
+    font-size:15px; line-height:1.35; color:#1a1208;
+    cursor:grab; user-select:none; word-break:break-word; pointer-events:auto;
+    transform-origin:center center; transition:box-shadow .15s;
+  }
+  .sticky.font-patrick { font-family:"Patrick Hand", "Comic Neue", "Segoe Print", "Comic Sans MS", cursive; }
+  .sticky.font-caveat { font-family:"Caveat", "Patrick Hand", cursive; font-weight:600; }
+  .sticky.font-marker { font-family:"Permanent Marker", "Patrick Hand", cursive; letter-spacing:0.01em; }
+  .sticky.font-architects { font-family:"Architects Daughter", "Patrick Hand", cursive; }
+  .sticky.font-sans { font-family:"Segoe UI", system-ui, -apple-system, sans-serif; font-weight:550; }
+  .sticky:hover { box-shadow:3px 6px 14px #0009, 0 1px 0 #fff8 inset; }
+  .sticky.yellow { background:#fde68a; }
+  .sticky.pink { background:#fbcfe8; }
+  .sticky.blue { background:#bfdbfe; }
+  .sticky.green { background:#bbf7d0; }
+  .sticky.orange { background:#fed7aa; }
+  .sticky.purple { background:#e9d5ff; }
+  .sticky.mint { background:#a7f3d0; }
+  .sticky.dragging { opacity:0.92; cursor:grabbing; box-shadow:6px 12px 22px #000a; }
+  .sticky.crumpling {
+    animation: crumple .62s cubic-bezier(.45,.05,.55,.95) forwards;
+    pointer-events:none !important;
+    z-index:90 !important;
+  }
+  .sticky.throwing {
+    transition: transform .48s cubic-bezier(.45,.05,.85,.35), opacity .48s ease-in, border-radius .3s;
+    pointer-events:none !important;
+    z-index:90 !important;
+  }
+  @keyframes crumple {
+    0% {
+      transform: scale(1) rotate(0deg) skewX(0) skewY(0);
+      filter: blur(0) contrast(1);
+      border-radius:2px;
+      box-shadow:2px 4px 10px #0007, 0 1px 0 #fff6 inset;
+    }
+    18% {
+      transform: scale(0.92) rotate(-8deg) skewX(4deg) skewY(-2deg);
+      filter: blur(0) contrast(1.05);
+      border-radius:8px 4px 12px 6px;
+    }
+    36% {
+      transform: scale(0.72) rotate(14deg) skewX(-8deg) skewY(5deg);
+      filter: blur(0.3px) contrast(1.1);
+      border-radius:18px 10px 22px 14px;
+      box-shadow:1px 2px 8px #0006, inset 4px -3px 0 #0001, inset -5px 4px 0 #fff3;
+    }
+    55% {
+      transform: scale(0.48) rotate(-22deg) skewX(10deg) skewY(-6deg);
+      filter: blur(0.5px) contrast(1.15);
+      border-radius:40% 35% 45% 38%;
+      box-shadow:0 2px 6px #0005, inset 6px -4px 0 #0002, inset -4px 6px 0 #fff2;
+    }
+    78% {
+      transform: scale(0.28) rotate(28deg) skewX(-6deg) skewY(8deg);
+      filter: blur(0.8px) contrast(1.2);
+      border-radius:48%;
+      opacity:0.95;
+    }
+    100% {
+      transform: scale(0.18) rotate(-32deg) skewX(4deg);
+      filter: blur(1.2px) contrast(1.25);
+      border-radius:50%;
+      opacity:0.9;
+      box-shadow:0 1px 4px #0004;
+    }
+  }
+  .sticky.selected-sticky {
+    box-shadow:3px 6px 14px #0009, 0 1px 0 #fff8 inset, 0 0 0 1.5px #1a120866, 0 0 0 3px #fbbf2488;
+    outline:2px solid #f59e0b;
+    outline-offset:1px;
+  }
+  .sticky .sticky-del {
+    position:absolute; top:3px; right:4px; border:none; background:transparent; color:#0007;
+    cursor:pointer; font-size:13px; line-height:1; padding:2px 4px; border-radius:4px;
+    font-family:"Segoe UI", system-ui, sans-serif; z-index:3;
+    opacity:0.22; transition:opacity .12s, background .12s, color .12s;
+  }
+  .sticky:hover .sticky-del, .sticky.selected-sticky .sticky-del, .sticky:focus-within .sticky-del { opacity:0.85; }
+  .sticky .sticky-del:hover { background:#0002; color:#000; opacity:1; }
+  .sticky .sticky-pin-hint {
+    position:absolute; left:8px; bottom:4px; font-size:8px; color:#0005; letter-spacing:0.04em; text-transform:uppercase;
+    font-family:"Segoe UI", system-ui, sans-serif;
+  }
+  .sticky textarea {
+    width:100%; min-height:var(--sticky-ta-h, 70px); border:none; background:transparent; resize:none;
+    font:inherit; color:inherit; padding:0; outline:none; cursor:text;
+  }
+  /* Adhesive strip cue (classic sticky top band) */
+  .sticky-adhesive {
+    position:absolute; top:0; left:0; right:0; height:16%;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,0.38) 0%,
+      rgba(255,255,255,0.16) 55%,
+      rgba(255,255,255,0.02) 85%,
+      transparent 100%);
+    pointer-events:none; z-index:1;
+    border-radius:2px 2px 0 0;
+    box-shadow:inset 0 -1px 0 rgba(0,0,0,0.045);
+  }
+  /* Subtle static top-right curl hint (matches reference after settle) */
+  .sticky-corner-hint {
+    position:absolute; top:0; right:0;
+    width:20px; height:20px;
+    pointer-events:none; z-index:2;
+    background:
+      linear-gradient(225deg,
+        rgba(255,255,255,0.7) 0%,
+        rgba(255,252,235,0.45) 32%,
+        rgba(230,210,140,0.25) 46%,
+        transparent 48%);
+    border-radius:0 2px 0 100%;
+    box-shadow:-3px 4px 7px rgba(0,0,0,0.10);
+    opacity:0.5;
+  }
+  /* Light bulb — child of sticky so it rides peel settle; sits ABOVE note face (clear, no overlap) */
+  .sticky {
+    overflow:visible;
+  }
+  .sticky-idea-pop {
+    position:absolute; left:50%; top:-44px; z-index:8;
+    pointer-events:none; line-height:1;
+    font-size:28px; transform-origin:50% 100%;
+    filter:drop-shadow(0 2px 6px #0008) drop-shadow(0 0 10px #fbbf2488);
+    animation: stickyIdeaPop 1.15s cubic-bezier(.22,.75,.28,1) both;
+    user-select:none;
+    margin:0; padding:0;
+  }
+  @keyframes stickyIdeaPop {
+    /* top:-44px + 28px glyph → stay above sticky top (y=0); max +Y keeps ~8px clearance */
+    0%   { opacity:0; transform:translate(-50%, 4px) scale(0.18) rotate(-22deg); }
+    16%  { opacity:1; transform:translate(-50%, -10px) scale(1.28) rotate(12deg); }
+    34%  { opacity:1; transform:translate(-50%, -2px) scale(0.96) rotate(-6deg); }
+    52%  { opacity:1; transform:translate(-50%, -6px) scale(1.1) rotate(4deg); }
+    72%  { opacity:0.92; transform:translate(-50%, -3px) scale(1.02) rotate(-1.5deg); }
+    88%  { opacity:0.45; transform:translate(-50%, -1px) scale(0.94) rotate(0.5deg); }
+    100% { opacity:0; transform:translate(-50%, 0px) scale(0.78) rotate(0deg); }
+  }
+  /* Peel-on: realistic top-right curl (ref: smooth fold + adhesive + soft under-curl shadow) */
+  .sticky.sticky-peeling-on {
+    /* Keep below .cork-head (50) so peel flight cannot block size/font sliders */
+    z-index:45 !important;
+    animation: stickyPeelOn 1.15s cubic-bezier(.22,.75,.28,1) both;
+    will-change: transform, opacity, filter;
+    overflow:visible;
+  }
+  .sticky.sticky-peeling-on .sticky-adhesive {
+    height:18%;
+    background:linear-gradient(180deg,
+      rgba(255,255,255,0.5) 0%,
+      rgba(255,255,255,0.22) 50%,
+      rgba(255,255,255,0.06) 78%,
+      transparent 100%);
+    box-shadow:inset 0 -1px 0 rgba(0,0,0,0.07);
+  }
+  .sticky.sticky-peeling-on .sticky-corner-hint { opacity:0; }
+  /* Soft diffuse shadow cast on note face under the curl */
+  .sticky.sticky-peeling-on::before {
+    content:"";
+    position:absolute; top:1px; right:1px;
+    width:58px; height:58px;
+    background:
+      radial-gradient(ellipse 85% 75% at 92% 8%,
+        rgba(0,0,0,0.32) 0%,
+        rgba(0,0,0,0.16) 32%,
+        rgba(0,0,0,0.06) 55%,
+        transparent 72%);
+    pointer-events:none; z-index:4;
+    animation: stickyPeelShadow 1.15s cubic-bezier(.22,.75,.28,1) both;
+  }
+  /* Curled corner flap — smooth organic fold toward center (not a sharp triangle) */
+  .sticky.sticky-peeling-on::after {
+    content:"";
+    position:absolute; top:-2px; right:-2px;
+    width:52px; height:52px;
+    background:
+      linear-gradient(228deg,
+        #fffef8 0%,
+        #fff9e6 22%,
+        #f7ebc0 42%,
+        #e8d48a 50%,
+        transparent 51%);
+    border-radius:0 3px 0 100%;
+    pointer-events:none;
+    z-index:5;
+    transform-origin:92% 8%;
+    animation: stickyPeelCorner 1.15s cubic-bezier(.22,.75,.28,1) both;
+    box-shadow:
+      -7px 9px 16px rgba(0,0,0,0.22),
+      -2px 3px 6px rgba(0,0,0,0.12),
+      inset 1px -1px 0 rgba(255,255,255,0.55),
+      inset -1px 1px 0 rgba(0,0,0,0.04);
+  }
+  @keyframes stickyPeelOn {
+    0% {
+      opacity:0;
+      transform: translate3d(26px,-52px,0) rotate(-18deg) scale(0.78) skewX(-6deg);
+      filter: drop-shadow(0 24px 18px #0008);
+      border-radius: 2px 26px 2px 2px;
+    }
+    14% {
+      opacity:1;
+      transform: translate3d(12px,-30px,0) rotate(10deg) scale(1.08) skewX(3deg);
+      filter: drop-shadow(0 18px 14px #0007);
+      border-radius: 2px 18px 2px 2px;
+    }
+    34% {
+      transform: translate3d(-3px,-12px,0) rotate(-6deg) scale(1.03) skewX(-2deg);
+      filter: drop-shadow(0 12px 10px #0005);
+      border-radius: 2px 12px 2px 2px;
+    }
+    54% {
+      transform: translate3d(2px,-1px,0) rotate(3deg) scale(0.995) skewX(1deg);
+      filter: drop-shadow(0 7px 8px #0004);
+      border-radius: 2px 5px 2px 2px;
+    }
+    74% {
+      transform: translate3d(-1px,2px,0) rotate(-1.2deg) scale(1.008);
+      filter: drop-shadow(0 5px 6px #0004);
+      border-radius: 2px;
+    }
+    90% {
+      transform: translate3d(0,-1px,0) rotate(0.5deg) scale(0.999);
+      filter: drop-shadow(0 4px 6px #0003);
+    }
+    100% {
+      opacity:1;
+      transform: translate3d(0,0,0) rotate(0deg) scale(1) skewX(0);
+      filter: drop-shadow(0 4px 6px #0003);
+      border-radius: 2px;
+    }
+  }
+  @keyframes stickyPeelCorner {
+    0% {
+      opacity:1;
+      transform: scale(1.45) rotate(6deg) translate(1px,-1px);
+      border-radius:0 4px 0 72%;
+      box-shadow:-10px 12px 20px rgba(0,0,0,0.28), -3px 4px 8px rgba(0,0,0,0.14), inset 1px -1px 0 rgba(255,255,255,0.6);
+    }
+    28% {
+      opacity:1;
+      transform: scale(1.22) rotate(1deg) translate(0,1px);
+      border-radius:0 3px 0 88%;
+    }
+    55% {
+      opacity:0.9;
+      transform: scale(1.02) rotate(-4deg) translate(-1px,3px);
+      border-radius:0 3px 0 100%;
+    }
+    78% {
+      opacity:0.45;
+      transform: scale(0.78) rotate(-8deg) translate(-2px,5px);
+      border-radius:0 2px 0 100%;
+    }
+    100% {
+      opacity:0;
+      transform: scale(0.5) rotate(-10deg) translate(-3px,6px);
+      border-radius:0 2px 0 100%;
+    }
+  }
+  @keyframes stickyPeelShadow {
+    0%   { opacity:1; transform:scale(1.15); }
+    45%  { opacity:0.7; transform:scale(1.02); }
+    100% { opacity:0; transform:scale(0.7); }
+  }
+  .sticky.editing-sticky { cursor:text; user-select:text; }
+  .sticky.pending-drag { cursor:grabbing; }
+  .archive-list { display:flex; flex-direction:column; gap:5px; }
+  .archive-item {
+    background:#171c28; border:1px solid var(--line); border-radius:8px; padding:7px 8px;
+    display:flex; gap:6px; align-items:flex-start; justify-content:space-between;
+  }
+  .archive-item .title { font-size:12px; font-weight:650; }
+  .archive-item .meta { color:var(--muted); font-size:10px; margin-top:2px; }
+  .archive-empty { color:var(--muted); font-size:12px; text-align:center; padding:20px 8px; }
+
+  /* Custom context menus */
+  .ctx-menu {
+    position:fixed; z-index:10000; min-width:196px; max-width:260px;
+    background:linear-gradient(180deg,#1e2638f2,#151a28f5);
+    border:1px solid #4b5872; border-radius:12px; padding:5px;
+    box-shadow:0 16px 40px #000b, 0 0 0 1px #ffffff0a;
+    backdrop-filter:blur(10px); color:#e8ecf4; font-size:12.5px;
+    user-select:none;
+  }
+  .ctx-menu[hidden] { display:none !important; }
+  .ctx-menu .ctx-label {
+    font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:#8b94a7;
+    padding:6px 10px 3px; font-weight:700;
+  }
+  .ctx-menu .ctx-item {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    width:100%; text-align:left; background:transparent; border:none; color:#e8ecf4;
+    padding:7px 10px; border-radius:8px; cursor:pointer; font:inherit; font-size:12.5px;
+  }
+  .ctx-menu .ctx-item:hover, .ctx-menu .ctx-item:focus { background:#2a3346; outline:none; }
+  .ctx-menu .ctx-item.active { color:#fcd34d; }
+  .ctx-menu .ctx-item.danger { color:#fda4af; }
+  .ctx-menu .ctx-item.danger:hover { background:#3a1d24; }
+  .ctx-menu .ctx-item .hint { color:#8b94a7; font-size:11px; }
+  .ctx-menu .ctx-sep { height:1px; background:#3a4560; margin:4px 6px; }
+  .ctx-menu .ctx-swatches { display:flex; flex-wrap:wrap; gap:5px; padding:4px 10px 8px; }
+  .ctx-menu .ctx-swatch {
+    width:20px; height:20px; border-radius:6px; border:2px solid transparent; cursor:pointer; padding:0;
+    box-shadow:inset 0 0 0 1px #0003;
+  }
+  .ctx-menu .ctx-swatch.selected { border-color:#fff; box-shadow:0 0 0 2px #6d5efc88; }
+  .ctx-menu .ctx-swatch.yellow { background:#fde68a; }
+  .ctx-menu .ctx-swatch.pink { background:#fbcfe8; }
+  .ctx-menu .ctx-swatch.blue { background:#bfdbfe; }
+  .ctx-menu .ctx-swatch.green { background:#bbf7d0; }
+  .ctx-menu .ctx-swatch.orange { background:#fed7aa; }
+  .ctx-menu .ctx-swatch.purple { background:#e9d5ff; }
+  .ctx-menu .ctx-swatch.mint { background:#a7f3d0; }
+  .ctx-menu .ctx-pills { display:flex; flex-wrap:wrap; gap:4px; padding:2px 10px 8px; }
+  .ctx-menu .ctx-pill {
+    background:#222836; border:1px solid #3a4560; color:#c5ccd8; border-radius:999px;
+    padding:3px 8px; font-size:11px; cursor:pointer;
+  }
+  .ctx-menu .ctx-pill:hover { border-color:#6d5efc; color:#fff; }
+  .ctx-menu .ctx-pill.active { background:#3a3014; color:#fbbf24; border-color:#6a5420; }
+
+  .accent-music { --accent:#a78bfa; } .accent-product { --accent:#38bdf8; }
+  .accent-animation { --accent:#f472b6; } .accent-build { --accent:#34d399; }
+  .accent-writing { --accent:#fb7185; } .accent-website { --accent:#22d3ee; }
+  .accent-idea { --accent:#fbbf24; } .accent-other { --accent:#94a3b8; }
+  #importFile { display:none; }
+  @media (max-width:1100px) {
+    .layout { grid-template-columns:1fr; }
+    .side { position:static; min-height:280px; }
+    .today-row { grid-template-columns:16px 18px 1fr auto; }
+  }
+</style>
+</head>
+<body class="density-compact">
+<div id="boardRoot">
+  <header>
+    <div>
+      <h1>Active Projects</h1>
+      <div class="sub">Active Projects · personal use · not for resale</div>
+    </div>
+    <div class="actions">
+      <div class="pill" id="updated">Local board</div>
+      <div class="filters" id="filters">
+        <button type="button" class="filter-chip" data-filter="today">Today only</button>
+        <button type="button" class="filter-chip" data-filter="p1">P1 only</button>
+        <button type="button" class="filter-chip" data-filter="deadlineWeek">Due this week</button>
+      </div>
+      <div class="seg" id="densitySeg" title="Density">
+        <button type="button" data-density="comfortable">Comfy</button>
+        <button type="button" data-density="compact" class="active">Compact</button>
+      </div>
+      <button class="tool" id="toggleDoneBtn" type="button">Show Done</button>
+      <button class="tool" id="exportBtn" type="button">Export</button>
+      <button class="tool" id="importBtn" type="button">Import</button>
+      <input type="file" id="importFile" accept="application/json,.json" />
+      <button class="tool" id="clearTodayBtn" type="button">Clear Today</button>
+      <button class="tool" id="resetBtn" type="button" title="Clear all projects. Stickies, folders, and archive are kept." aria-label="Clear projects">Clear projects</button>
+      <button class="tool primary" id="addProjectBtn" type="button">New project</button>
+    </div>
+  </header>
+
+
+  <section class="cork-section" id="corkSection">
+    <div class="cork-head">
+      <div class="cork-toolbar" id="corkToolbar" title="Sticky styles — edit selected note, or Lock defaults for new stickies">
+        <button type="button" class="tool lock-defaults" id="lockDefaultsBtn" title="Save current font, size, scale, and color as defaults for new stickies">Lock defaults</button>
+        <select class="sticky-font" id="stickyFontSelect" title="Font" aria-label="Sticky font">
+          <option value="patrick">Hand</option>
+          <option value="caveat">Caveat</option>
+          <option value="marker">Marker</option>
+          <option value="architects">Sketch</option>
+          <option value="sans">Clean</option>
+        </select>
+        <div class="sticky-slider" title="Text size">
+          <span class="slider-ico" aria-hidden="true">A</span>
+          <input type="range" id="stickyFontSizeSlider" min="8" max="36" step="1" value="15" aria-label="Text size" />
+        </div>
+        <div class="sticky-slider note" title="Note size">
+          <span class="slider-ico" aria-hidden="true">□</span>
+          <input type="range" id="stickyNoteScaleSlider" min="0.5" max="2.2" step="0.01" value="1" aria-label="Note size" />
+        </div>
+        <button type="button" class="swatch yellow selected" data-color="yellow" title="Yellow"></button>
+        <button type="button" class="swatch pink" data-color="pink" title="Pink"></button>
+        <button type="button" class="swatch blue" data-color="blue" title="Blue"></button>
+        <button type="button" class="swatch green" data-color="green" title="Green"></button>
+        <button type="button" class="swatch orange" data-color="orange" title="Orange"></button>
+        <button type="button" class="swatch purple" data-color="purple" title="Purple"></button>
+        <button type="button" class="swatch mint" data-color="mint" title="Mint"></button>
+        <button class="tool primary" type="button" id="newStickyBtn">+ Sticky</button>
+        <button class="tool" type="button" id="newFolderBtn" title="Add a folder on the cork">+ Folder</button>
+      </div>
+    </div>
+    <div class="cork-stage">
+      <div class="cork" id="corkboard"></div>
+    </div>
+  </section>
+
+  <section class="today" id="todayDrop">
+    <div class="today-head">
+      <div class="today-title">Today</div>
+      <div class="today-date" id="todayDate"></div>
+    </div>
+    <div class="today-list" id="todayList"></div>
+    <div class="today-expand" id="todayExpand" hidden></div>
+  </section>
+
+  <div class="layout">
+    <div>
+      <div class="section-label">
+        <span>Global projects</span>
+        <span id="phaseHint" style="text-transform:none;letter-spacing:0;font-weight:500"></span>
+      </div>
+      <div class="board-wrap">
+        <div class="phases" id="phases"></div>
+      </div>
+    </div>
+
+    <aside class="side" id="side">
+      <div class="side-tabs">
+        <button type="button" class="active" data-side="edit">Details</button>
+        <button type="button" data-side="archive">Archive</button>
+      </div>
+      <div class="side-pane editor" id="paneEdit">
+        <div class="editor-empty" id="editorEmpty">
+          Single-click selects · double-click opens details.<br/>
+          Right-click to customize · drag onto Today.<br/>
+          Stickies: double-click to edit, right-click to style.
+        </div>
+        <div id="editorForm" hidden>
+          <h2 id="editorHeading">Edit</h2>
+          <div class="hint">Autosaves as you type</div>
+          <label>Title</label>
+          <input id="fTitle" />
+          <div class="grid2">
+            <div>
+              <label>Category</label>
+              <select id="fCategory">
+                <option value="music">Music</option>
+                <option value="product">Product</option>
+                <option value="animation">Animation</option>
+                <option value="build">Build</option>
+                <option value="writing">Writing</option>
+                <option value="website">Website</option>
+                <option value="idea">Idea</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label>Phase</label>
+              <select id="fLane">
+                <option value="ideas">Ideas</option>
+                <option value="todo">To Do</option>
+                <option value="doing">Doing</option>
+                <option value="review">Review</option>
+                <option value="done">Done</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid2">
+            <div>
+              <label>Priority</label>
+              <select id="fPriority">
+                <option value="1">P1 · Focus</option>
+                <option value="2">P2 · Soon</option>
+                <option value="3">P3 · Later</option>
+              </select>
+            </div>
+            <div>
+              <label>Status</label>
+              <input id="fStatus" placeholder="Drafting, In progress…" />
+            </div>
+          </div>
+          <label>Location / app</label>
+          <input id="fLocation" list="locList" placeholder="App, folder, or link" />
+          <datalist id="locList">
+            <option value="Desktop"></option>
+            <option value="Browser"></option>
+            <option value="Docs"></option>
+            <option value="Notes"></option>
+          </datalist>
+          <label class="checkrow"><input type="checkbox" id="fToday" /> On Today focus</label>
+          <label>Today bubble</label>
+          <input id="fTodayNote" placeholder="What needs doing on this today?" />
+          <label>Deadline</label>
+          <input id="fDeadline" type="datetime-local" />
+          <label>Focus timer (minutes)</label>
+          <div class="timer-box">
+            <input id="fTimerMins" type="number" min="1" max="240" value="25" />
+            <button class="tool" type="button" id="startTimerBtn">Start</button>
+            <button class="tool" type="button" id="stopTimerBtn">Stop</button>
+            <span class="timer-readout" id="timerReadout">--:--</span>
+          </div>
+          <label>Bookmark / link</label>
+          <input id="fBookmark" placeholder="https://… or folder path" />
+          <label>Next steps</label>
+          <textarea id="fNext" placeholder="Longer next steps"></textarea>
+          <label>Notes</label>
+          <textarea id="fNotes" class="tall" placeholder="Free notes, scraps, reminders…"></textarea>
+          <div class="editor-actions">
+            <button class="tool" type="button" id="moveUpBtn">Move up</button>
+            <button class="tool" type="button" id="moveDownBtn">Move down</button>
+            <button class="tool" type="button" id="pushBtn">Push →</button>
+            <button class="tool" type="button" id="archiveBtn">Archive</button>
+            <button class="tool" type="button" id="deleteBtn">Delete</button>
+            <button class="tool primary" type="button" id="doneBtn">Done</button>
+          </div>
+        </div>
+      </div>
+      <div class="side-pane" id="paneArchive" hidden>
+        <div class="section-label" style="margin-bottom:6px">
+          <span>Archived</span>
+          <button class="tool" type="button" id="archiveAllDoneBtn">Archive all Done</button>
+        </div>
+        <div class="archive-list" id="archiveList"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="stickyLayer" aria-hidden="false"></div>
+
+    <button type="button" class="trash-can" id="trashCan" title="Crumple and throw away">
+    <svg class="trash-svg" viewBox="0 0 48 56" aria-hidden="true">
+      <defs>
+        <linearGradient id="trashBinGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#5b6578"/>
+          <stop offset="55%" stop-color="#3a4254"/>
+          <stop offset="100%" stop-color="#252b38"/>
+        </linearGradient>
+        <linearGradient id="trashLidGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#7a8498"/>
+          <stop offset="100%" stop-color="#4a5366"/>
+        </linearGradient>
+      </defs>
+      <!-- bin body -->
+      <path d="M10 18 L12 50 Q12 53 15 53 L33 53 Q36 53 36 50 L38 18 Z" fill="url(#trashBinGrad)" stroke="#1a2030" stroke-width="1.2"/>
+      <!-- rim -->
+      <rect x="8" y="16" width="32" height="4.5" rx="1.2" fill="#4a5366" stroke="#1a2030" stroke-width="0.8"/>
+      <!-- vertical ribs -->
+      <line x1="17" y1="22" x2="18" y2="50" stroke="#667085" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
+      <line x1="24" y1="22" x2="24" y2="50" stroke="#667085" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
+      <line x1="31" y1="22" x2="30" y2="50" stroke="#667085" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
+      <!-- lid group (opens) -->
+      <g class="trash-lid-g">
+        <rect x="7" y="11" width="34" height="6" rx="2" fill="url(#trashLidGrad)" stroke="#1a2030" stroke-width="1"/>
+        <rect x="18" y="7" width="12" height="5" rx="2" fill="#6a7488" stroke="#1a2030" stroke-width="0.9"/>
+        <rect x="20.5" y="8.2" width="7" height="2.2" rx="1" fill="#8b94a7"/>
+      </g>
+    </svg>
+    <span class="label">Trash</span>
+  </button>
+</div>
+
+<div id="folderPopover" hidden role="dialog" aria-label="Folder contents">
+  <div class="fp-head">
+    <div class="fp-title" id="folderPopoverTitle">Folder</div>
+    <button type="button" class="fp-close" id="folderPopoverClose" title="Close">×</button>
+  </div>
+  <div class="fp-list" id="folderPopoverList"></div>
+  <div class="fp-actions">
+    <button type="button" id="folderSpreadBtn" title="Fan all stickies onto the cork near this folder">Spread onto cork</button>
+  </div>
+  <div class="fp-hint">Drag a sticky out to unfile · Spread fans all out · double-click folder to rename</div>
+</div>
+
+<div class="trash-toast" id="trashToast" hidden>
+  <span>Sticky crumpled.</span>
+  <button type="button" id="undoTrashBtn">Undo</button>
+</div>
+
+<script>
+
+const STORAGE_KEY = "active-projects-board-v1";
+
+const PHASES = [
+  { id: "ideas", label: "Ideas" },
+  { id: "todo", label: "To Do" },
+  { id: "doing", label: "Doing" },
+  { id: "review", label: "Review" },
+  { id: "done", label: "Done" }
+];
+
+const categoryLabel = {
+  music: "Music", product: "Product", animation: "Animation",
+  build: "Build", writing: "Writing", website: "Web",
+  idea: "Idea", other: "Other"
+};
+const categoryIcon = {
+  music: "♪", product: "▣", animation: "✦", build: "⚡",
+  writing: "✎", website: "◎", idea: "·", other: "•"
+};
+
+const defaults = [];
+
+let cards = [];
+let stickies = [];
+let folders = [];
+let archived = [];
+let prefs = { density: "compact", showDone: false, filter: null, sideTab: "edit", stickyColor: "yellow", stickyDefaults: null, stickyCoordSpace: "cork" };
+let zCounter = 10;
+let recentlyTrashed = null;
+let trashUndoTimer = null;
+let animatingStickyIds = new Set();
+let selectedId = null;
+let selectedIds = new Set(); /* multi-select projects (tiles / today rows) */
+let detailsOpen = false; /* side/today expand only after double-click (or explicit open) */
+let selectedStickyIds = new Set(); /* multi-select free stickies */
+let selectedFolderIds = new Set();
+let openFolderId = null;
+let editingFolderId = null;
+let selectedChipIds = new Set(); /* multi-select attached sticky chips */
+let dragId = null;
+let dragStickyId = null;
+const STICKY_DROP_SLOP_PX = 40;
+let suppressClick = false;
+let editingStickyId = null;
+let timerEndsAt = null;
+let timerHandle = null;
+let timerCardId = null;
+
+function mapLegacyLane(lane) {
+  if (lane === "now") return "doing";
+  if (lane === "later") return "todo";
+  if (PHASES.some((p) => p.id === lane)) return lane;
+  return "ideas";
+}
+function cloneDefaults() { return JSON.parse(JSON.stringify(defaults)); }
+
+function normalizeCard(c, i) {
+  return {
+    id: c.id || ("c" + i + Date.now()),
+    lane: mapLegacyLane(c.lane || "ideas"),
+    category: c.category || "other",
+    title: c.title || "Untitled",
+    status: c.status || "Open",
+    location: c.location || "",
+    bookmark: c.bookmark || "",
+    next: c.next || "",
+    notes: c.notes || "",
+    todayNote: c.todayNote || "",
+    deadline: c.deadline || "",
+    timerMins: Number(c.timerMins) > 0 ? Number(c.timerMins) : 25,
+    priority: [1, 2, 3].includes(Number(c.priority)) ? Number(c.priority) : 2,
+    today: Boolean(c.today),
+    order: typeof c.order === "number" ? c.order : i
+  };
+}
+function normalize(list) { return (list || []).map((c, i) => normalizeCard(c, i)); }
+
+const STICKY_COLORS = ["yellow", "pink", "blue", "green", "orange", "purple", "mint"];
+const STICKY_FONTS = ["patrick", "caveat", "marker", "architects", "sans"];
+const STICKY_FONT_PX = { s: 12, m: 15, l: 19 };
+const STICKY_NOTE_SCALE = { s: 0.8, m: 1, l: 1.28 };
+const STICKY_FONT_PX_MIN = 8;
+const STICKY_FONT_PX_MAX = 36;
+const STICKY_NOTE_SCALE_MIN = 0.5;
+const STICKY_NOTE_SCALE_MAX = 2.2;
+const STICKY_DRAG_THRESHOLD_PX = 5;
+const STICKY_BASE_W = 148;
+const STICKY_BASE_H = 112;
+const STICKY_BASE_PAD_Y = 12;
+const STICKY_BASE_PAD_X = 12;
+const STICKY_BASE_PAD_B = 20;
+const STICKY_BASE_TA_H = 70;
+const STICKY_FONT_LABELS = {
+  patrick: "Hand",
+  caveat: "Caveat",
+  marker: "Marker",
+  architects: "Sketch",
+  sans: "Clean"
+};
+
+function clampNum(n, lo, hi, fallback) {
+  const v = Number(n);
+  if (!Number.isFinite(v)) return fallback;
+  return Math.min(hi, Math.max(lo, v));
+}
+function resolveFontSizePx(src) {
+  if (src && typeof src.fontSizePx === "number") {
+    return clampNum(src.fontSizePx, STICKY_FONT_PX_MIN, STICKY_FONT_PX_MAX, 15);
+  }
+  if (src && typeof src.fontSize === "string" && STICKY_FONT_PX[src.fontSize] != null) {
+    return STICKY_FONT_PX[src.fontSize];
+  }
+  if (src && typeof src.fontSize === "number") {
+    return clampNum(src.fontSize, STICKY_FONT_PX_MIN, STICKY_FONT_PX_MAX, 15);
+  }
+  return 15;
+}
+function resolveNoteScale(src) {
+  if (src && typeof src.noteScale === "number") {
+    return clampNum(src.noteScale, STICKY_NOTE_SCALE_MIN, STICKY_NOTE_SCALE_MAX, 1);
+  }
+  if (src && typeof src.noteSize === "string" && STICKY_NOTE_SCALE[src.noteSize] != null) {
+    return STICKY_NOTE_SCALE[src.noteSize];
+  }
+  if (src && typeof src.noteSize === "number") {
+    return clampNum(src.noteSize, STICKY_NOTE_SCALE_MIN, STICKY_NOTE_SCALE_MAX, 1);
+  }
+  return 1;
+}
+function stickySizeInlineStyle(s) {
+  const px = resolveFontSizePx(s);
+  const scale = resolveNoteScale(s);
+  const w = Math.round(STICKY_BASE_W * scale);
+  const h = Math.round(STICKY_BASE_H * scale);
+  const padY = Math.max(8, Math.round(STICKY_BASE_PAD_Y * scale));
+  const padX = Math.max(8, Math.round(STICKY_BASE_PAD_X * scale));
+  const padB = Math.max(14, Math.round(STICKY_BASE_PAD_B * scale));
+  const taH = Math.max(40, Math.round(STICKY_BASE_TA_H * scale));
+  return {
+    fontSize: px + "px",
+    lineHeight: px <= 11 ? "1.35" : (px >= 24 ? "1.22" : (px >= 18 ? "1.28" : "1.35")),
+    width: w + "px",
+    minHeight: h + "px",
+    padding: padY + "px " + padX + "px " + padB + "px",
+    ["--sticky-ta-h"]: taH + "px"
+  };
+}
+function stickySizeStyleAttr(s) {
+  const st = stickySizeInlineStyle(s);
+  return (
+    "font-size:" + st.fontSize + ";" +
+    "line-height:" + st.lineHeight + ";" +
+    "width:" + st.width + ";" +
+    "min-height:" + st.minHeight + ";" +
+    "padding:" + st.padding + ";" +
+    "--sticky-ta-h:" + st["--sticky-ta-h"]
+  );
+}
+
+function defaultStickyDefaults() {
+  return { font: "patrick", fontSizePx: 15, noteScale: 1, color: "yellow" };
+}
+function normalizeStickyDefaults(raw, fallbackColor) {
+  const base = defaultStickyDefaults();
+  const src = raw && typeof raw === "object" ? raw : {};
+  const color = STICKY_COLORS.includes(src.color) ? src.color
+    : (STICKY_COLORS.includes(fallbackColor) ? fallbackColor : base.color);
+  return {
+    font: STICKY_FONTS.includes(src.font) ? src.font : base.font,
+    fontSizePx: resolveFontSizePx(src),
+    noteScale: resolveNoteScale(src),
+    color: color
+  };
+}
+function getStickyDefaults() {
+  prefs.stickyDefaults = normalizeStickyDefaults(prefs.stickyDefaults, prefs.stickyColor);
+  prefs.stickyColor = prefs.stickyDefaults.color;
+  return prefs.stickyDefaults;
+}
+
+function normalizeSticky(s, i, fromCorkV8) {
+  const color = STICKY_COLORS.includes(s.color) ? s.color : "yellow";
+  const font = STICKY_FONTS.includes(s.font) ? s.font : "patrick";
+  const fontSizePx = resolveFontSizePx(s);
+  const noteScale = resolveNoteScale(s);
+  let x = typeof s.x === "number" ? s.x : (6 + (i % 5) * 16);
+  let y = typeof s.y === "number" ? s.y : (8 + Math.floor(i / 5) * 12);
+  if (fromCorkV8 && !s.attachedTo) {
+    x = Math.min(88, Math.max(2, x));
+    y = Math.min(28, Math.max(6, 6 + (y * 0.28)));
+  }
+  const z = typeof s.z === "number" ? s.z : (i + 1);
+  if (z > zCounter) zCounter = z;
+  let folderId = s.folderId || s.attachedToFolder || null;
+  if (folderId && typeof folderId !== "string") folderId = null;
+  const attachedTo = s.attachedTo || null;
+  if (attachedTo) folderId = null;
+  return {
+    id: s.id || ("s" + i + Date.now()),
+    text: typeof s.text === "string" ? s.text : "",
+    color: color,
+    font: font,
+    fontSizePx: fontSizePx,
+    noteScale: noteScale,
+    x: Math.min(94, Math.max(0, x)),
+    y: Math.min(92, Math.max(0, y)),
+    z: z,
+    attachedTo: attachedTo,
+    folderId: folderId
+  };
+}
+function normalizeStickies(list, fromCorkV8) {
+  return (list || []).map((s, i) => normalizeSticky(s, i, fromCorkV8));
+}
+
+
+function normalizeFolder(f, i) {
+  const z = typeof f.z === "number" ? f.z : (i + 1);
+  if (z > zCounter) zCounter = z;
+  let x = typeof f.x === "number" ? f.x : (10 + (i % 4) * 18);
+  let y = typeof f.y === "number" ? f.y : (12 + Math.floor(i / 4) * 18);
+  return {
+    id: f.id || ("f" + i + Date.now()),
+    name: (typeof f.name === "string" && f.name.trim()) ? f.name.trim().slice(0, 48) : ("Folder " + (i + 1)),
+    x: Math.min(94, Math.max(0, x)),
+    y: Math.min(92, Math.max(0, y)),
+    z: z
+  };
+}
+function normalizeFolders(list) {
+  return (list || []).filter((f) => f && typeof f === "object").map((f, i) => normalizeFolder(f, i));
+}
+function stickiesInFolder(folderId) {
+  return stickies.filter((s) => s.folderId === folderId && !s.attachedTo);
+}
+function folderById(id) { return folders.find((f) => f.id === id) || null; }
+function bringFolderFront(f) {
+  if (!f) return;
+  const maxZ = Math.max(
+    stickies.reduce((m, x) => Math.max(m, typeof x.z === "number" ? x.z : 0), 0),
+    folders.reduce((m, x) => Math.max(m, typeof x.z === "number" ? x.z : 0), zCounter)
+  );
+  zCounter = Math.max(zCounter, maxZ) + 1;
+  f.z = zCounter;
+}
+
+function defaultPrefs() {
+  const stickyDefaults = defaultStickyDefaults();
+  return {
+    density: "compact", showDone: false, filter: null, sideTab: "edit",
+    stickyColor: stickyDefaults.color, stickyDefaults: stickyDefaults,
+    stickyCoordSpace: "cork"
+  };
+}
+function defaultState() {
+  return { version: 14, projects: normalize(cloneDefaults()), stickies: [], folders: [], archived: [], prefs: defaultPrefs() };
+}
+
+function ensureSeedCards(list) {
+  return normalize(list);
+}
+
+/** Migrate any prior key shape into v14. Never drops projects/stickies/folders/archived/prefs. */
+function migrateFromParsed(parsed) {
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && Array.isArray(parsed.projects)) {
+    const fromCorkV8 = Number(parsed.version) < 9;
+    const prefsIn = Object.assign({}, defaultPrefs(), parsed.prefs || {});
+    if (prefsIn.sideTab === "stickies") prefsIn.sideTab = "edit";
+    if (!STICKY_COLORS.includes(prefsIn.stickyColor)) prefsIn.stickyColor = "yellow";
+    prefsIn.stickyDefaults = normalizeStickyDefaults(prefsIn.stickyDefaults, prefsIn.stickyColor);
+    prefsIn.stickyColor = prefsIn.stickyDefaults.color;
+    /* Legacy saves used boardRoot %; leave unset/"board" so migrateStickyCoordsToCork runs once */
+    if (parsed.prefs && parsed.prefs.stickyCoordSpace === "cork") prefsIn.stickyCoordSpace = "cork";
+    else if (!(parsed.prefs && parsed.prefs.stickyCoordSpace)) prefsIn.stickyCoordSpace = "board";
+    const foldersIn = normalizeFolders(parsed.folders || []);
+    const folderIds = new Set(foldersIn.map((f) => f.id));
+    const stickiesIn = normalizeStickies((parsed.stickies || []).filter((s) => s && typeof s === "object"), fromCorkV8).map((s) => {
+      if (s.folderId && !folderIds.has(s.folderId)) s.folderId = null;
+      return s;
+    });
+    return {
+      version: 14,
+      projects: ensureSeedCards(normalize(parsed.projects.filter((c) => c && typeof c === "object"))),
+      stickies: stickiesIn,
+      folders: foldersIn,
+      archived: normalize((parsed.archived || []).filter((c) => c && typeof c === "object")),
+      prefs: prefsIn
+    };
+  }
+  if (Array.isArray(parsed)) {
+    const cleaned = parsed.filter((c) => c && typeof c === "object");
+    return {
+      version: 14,
+      projects: ensureSeedCards(normalize(cleaned)),
+      stickies: [],
+      folders: [],
+      archived: [],
+      prefs: defaultPrefs()
+    };
+  }
+  return null;
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      let parsed;
+      try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+      const state = parsed ? migrateFromParsed(parsed) : null;
+      if (state && Array.isArray(state.projects)) return state;
+    }
+  } catch (err) { console.error(err); }
+  return defaultState();
+}
+
+function applyState(state) {
+  cards = state.projects || [];
+  stickies = state.stickies || [];
+  folders = normalizeFolders(state.folders || []);
+  archived = state.archived || [];
+  prefs = Object.assign({}, defaultPrefs(), state.prefs || {});
+  if (prefs.sideTab === "stickies") prefs.sideTab = "edit";
+  prefs.stickyDefaults = normalizeStickyDefaults(prefs.stickyDefaults, prefs.stickyColor);
+  prefs.stickyColor = prefs.stickyDefaults.color;
+  const folderIds = new Set(folders.map((f) => f.id));
+  stickies.forEach((s) => {
+    if (s.folderId && !folderIds.has(s.folderId)) s.folderId = null;
+    if (s.attachedTo && s.folderId) s.folderId = null;
+  });
+  if (typeof openFolderId !== "undefined" && openFolderId && !folderIds.has(openFolderId)) openFolderId = null;
+  pruneStickySelection();
+  stickies.forEach((s) => { if (s.z > zCounter) zCounter = s.z; });
+  folders.forEach((f) => { if (f.z > zCounter) zCounter = f.z; });
+}
+function currentState() {
+  prefs.stickyDefaults = getStickyDefaults();
+  return { version: 14, projects: cards, stickies: stickies, folders: folders, archived: archived, prefs: prefs };
+}
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(currentState()));
+  document.getElementById("updated").textContent = "Saved · " + new Date().toLocaleString();
+}
+
+function passesFilter(c) {
+  if (!prefs.filter) return true;
+  if (prefs.filter === "today") return Boolean(c.today);
+  if (prefs.filter === "p1") return Number(c.priority) === 1;
+  if (prefs.filter === "deadlineWeek") {
+    if (!c.deadline) return false;
+    const due = new Date(c.deadline);
+    if (Number.isNaN(due.getTime())) return false;
+    return due.getTime() <= Date.now() + 7 * 86400000;
+  }
+  return true;
+}
+function laneCards(lane) {
+  return cards.filter((c) => c.lane === lane && passesFilter(c)).sort((a, b) => a.order - b.order);
+}
+function todayCards() {
+  return cards.filter((c) => c.today).sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title));
+}
+function reindexLane(lane) {
+  cards.filter((c) => c.lane === lane).sort((a, b) => a.order - b.order).forEach((c, i) => { c.order = i; });
+}
+function nextPhase(lane) {
+  const idx = PHASES.findIndex((p) => p.id === lane);
+  if (idx < 0 || idx >= PHASES.length - 1) return lane;
+  return PHASES[idx + 1].id;
+}
+function prevPhase(lane) {
+  const idx = PHASES.findIndex((p) => p.id === lane);
+  if (idx <= 0) return lane;
+  return PHASES[idx - 1].id;
+}
+function escapeHtml(s) {
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+}
+function deadlineInfo(deadline) {
+  if (!deadline) return null;
+  const due = new Date(deadline);
+  if (Number.isNaN(due.getTime())) return null;
+  const ms = due.getTime() - Date.now();
+  const dayMs = 86400000;
+  let label;
+  if (ms < 0) label = "Overdue";
+  else if (ms < dayMs) label = "Due today";
+  else if (ms < 2 * dayMs) label = "Due tomorrow";
+  else label = "Due " + due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const cls = ms < 0 ? "due" : ms < dayMs ? "due soon" : "due ok";
+  return { label, cls };
+}
+function stickiesFor(cardId) { return stickies.filter((s) => s.attachedTo === cardId); }
+function freeStickies() { return stickies.filter((s) => !s.attachedTo && !s.folderId && !animatingStickyIds.has(s.id)); }
+
+function stickyPinsHTML(cardId) {
+  const list = stickiesFor(cardId);
+  if (!list.length) return "";
+  return '<div class="sticky-pins">' + list.map((s) => {
+    const preview = (s.text || "Note").replace(/\s+/g, " ").slice(0, 28);
+    return '<span class="sticky-pin ' + s.color + '" draggable="true" data-sticky-chip="' + s.id + '" title="Drag to cork to unattach · shift/ctrl-click multi-select">' +
+      escapeHtml(preview) + "</span>";
+  }).join("") + "</div>";
+}
+
+
+function syncProjectSelection(primaryId, ids) {
+  selectedIds = new Set((ids || []).filter(Boolean));
+  if (primaryId && selectedIds.has(primaryId)) selectedId = primaryId;
+  else if (selectedIds.size) {
+    let last = null;
+    selectedIds.forEach((id) => { last = id; });
+    selectedId = last;
+  } else selectedId = null;
+}
+function selectOnlyProject(id) {
+  if (!id) { selectedIds.clear(); selectedId = null; detailsOpen = false; return; }
+  selectedIds = new Set([id]);
+  selectedId = id;
+}
+function openProjectDetails(id) {
+  if (!id) return;
+  selectOnlyProject(id);
+  detailsOpen = true;
+  prefs.sideTab = "edit";
+}
+function closeProjectDetails() {
+  detailsOpen = false;
+}
+function toggleProjectSelection(id) {
+  if (!id) return;
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  if (!selectedIds.size) selectedId = null;
+  else selectedId = id;
+}
+function cardIdsForMove(primaryId) {
+  if (primaryId && selectedIds.has(primaryId) && selectedIds.size > 1) {
+    return Array.from(selectedIds).filter((id) => cards.some((c) => c.id === id));
+  }
+  return primaryId ? [primaryId] : [];
+}
+function moveCardsToLane(ids, targetLane, beforeId) {
+  const moveIds = (ids || []).filter((id) => cards.some((c) => c.id === id));
+  if (!moveIds.length || !targetLane) return null;
+  const moving = moveIds.map((id) => cards.find((c) => c.id === id)).filter(Boolean);
+  moving.sort((a, b) => (a.lane === b.lane ? a.order - b.order : String(a.lane).localeCompare(String(b.lane))));
+  const prevLanes = Array.from(new Set(moving.map((c) => c.lane)));
+  const moveSet = new Set(moveIds);
+  let host = cards.filter((c) => c.lane === targetLane && !moveSet.has(c.id)).sort((a, b) => a.order - b.order);
+  let insertAt = host.length;
+  if (beforeId && !moveSet.has(beforeId)) {
+    const idx = host.findIndex((c) => c.id === beforeId);
+    if (idx >= 0) insertAt = idx;
+  }
+  moving.forEach((c) => { c.lane = targetLane; });
+  host.splice(insertAt, 0, ...moving);
+  host.forEach((c, i) => { c.order = i; });
+  prevLanes.forEach((lane) => { if (lane !== targetLane) reindexLane(lane); });
+  reindexLane(targetLane);
+  return moveIds[0];
+}
+
+function tileHTML(c) {
+  const selected = selectedIds.has(c.id) || c.id === selectedId ? " selected" : "";
+  const onToday = c.today ? " on-today" : "";
+  // Ideas: single-line title only. Other phases: title + pinned stickies, no badge/arrow chrome.
+  if (c.lane === "ideas") {
+    return (
+      '<article class="tile tile-idea accent-' + c.category + selected + onToday + '" data-id="' + c.id + '" draggable="true" title="Drag to move">' +
+        '<div class="tile-top">' +
+          '<div class="tile-main">' +
+            '<h3 class="tile-title">' + escapeHtml(c.title) + "</h3>" +
+          "</div>" +
+        "</div>" +
+      "</article>"
+    );
+  }
+  return (
+    '<article class="tile accent-' + c.category + selected + onToday + '" data-id="' + c.id + '" draggable="true" title="Drag to move">' +
+      '<div class="tile-top">' +
+        '<div class="icon">' + (categoryIcon[c.category] || "•") + "</div>" +
+        '<div class="tile-main">' +
+          '<h3 class="tile-title">' + escapeHtml(c.title) + "</h3>" +
+          stickyPinsHTML(c.id) +
+        "</div>" +
+      "</div>" +
+    "</article>"
+  );
+}
+
+function todayRowHTML(c) {
+  const selected = selectedIds.has(c.id) || c.id === selectedId ? " selected" : "";
+  const bubble = '<input class="today-bubble-input" type="text" data-today-note="' + c.id + '" value="' + escapeHtml(c.todayNote || "") + '" placeholder="Add today’s task…" />';
+  const due = deadlineInfo(c.deadline);
+  const dueHtml = due
+    ? '<span class="today-due chip ' + due.cls + '">' + escapeHtml(due.label) + "</span>"
+    : '<span class="today-due missing">No deadline</span>';
+  const running = timerCardId === c.id && timerEndsAt;
+  const mins = Number(c.timerMins) > 0 ? Number(c.timerMins) : 25;
+  const readout = running ? formatTimer(timerEndsAt - Date.now()) : (String(mins).padStart(2, "0") + ":00");
+  return (
+    '<div class="today-row accent-' + c.category + selected + '" data-id="' + c.id + '">' +
+      '<div class="handle" draggable="true" data-id="' + c.id + '">⋮⋮</div>' +
+      '<div class="icon">' + (categoryIcon[c.category] || "•") + "</div>" +
+      '<div class="name">' + escapeHtml(c.title) + stickyPinsHTML(c.id) + "</div>" +
+      '<div class="prio p' + c.priority + '">P' + c.priority + "</div>" +
+      bubble + dueHtml +
+      '<div class="today-timer" data-timer-card="' + c.id + '">' +
+        '<input type="number" min="1" max="240" value="' + mins + '" data-row-timer-mins="' + c.id + '" title="Minutes" />' +
+        '<button type="button" data-row-timer-start="' + c.id + '">▶</button>' +
+        '<button type="button" data-row-timer-stop="' + c.id + '">■</button>' +
+        '<span class="readout" data-row-timer-readout="' + c.id + '">' + readout + "</span>" +
+      "</div>" +
+      '<button type="button" class="remove" data-untoday="' + c.id + '">Remove</button>' +
+    "</div>"
+  );
+}
+
+function parkTodayExpand() {
+  const box = document.getElementById("todayExpand");
+  const section = document.getElementById("todayDrop");
+  if (box && section) section.appendChild(box);
+}
+
+function placeTodayExpandInline() {
+  const box = document.getElementById("todayExpand");
+  if (!box || box.hidden) return;
+  const c = cards.find((x) => x.id === selectedId);
+  if (!c) return;
+  const row = document.querySelector('#todayList .today-row[data-id="' + c.id + '"]');
+  if (row) {
+    row.insertAdjacentElement("afterend", box);
+  } else {
+    parkTodayExpand();
+  }
+}
+
+function renderToday() {
+  document.getElementById("todayDate").textContent = new Date().toLocaleDateString(undefined, {
+    weekday: "long", year: "numeric", month: "short", day: "numeric"
+  });
+  parkTodayExpand();
+  const host = document.getElementById("todayList");
+  const list = todayCards();
+  host.innerHTML = list.length
+    ? list.map(todayRowHTML).join("")
+    : '<div class="today-empty">Drag a project here, or tap + Today. Double-click a row to expand details.</div>';
+  renderTodayExpand();
+}
+
+function renderTodayExpand() {
+  const box = document.getElementById("todayExpand");
+  const c = cards.find((x) => x.id === selectedId);
+  if (!c || !detailsOpen) { box.hidden = true; box.className = "today-expand"; box.innerHTML = ""; parkTodayExpand(); return; }
+  box.hidden = false;
+  box.className = "today-expand accent-" + c.category;
+  const due = deadlineInfo(c.deadline);
+  const dueLabel = due ? due.label : "No deadline";
+  const dueCls = due ? due.cls : "today";
+  const mins = Number(c.timerMins) > 0 ? Number(c.timerMins) : 25;
+  const running = timerCardId === c.id && timerEndsAt;
+  const readout = running ? formatTimer(timerEndsAt - Date.now()) : (String(mins).padStart(2, "0") + ":00");
+  const priorityOptions = [1, 2, 3].map((n) => {
+    return '<option value="' + n + '"' + (c.priority === n ? " selected" : "") + ">P" + n + "</option>";
+  }).join("");
+  box.innerHTML = [
+    "<h3>" + escapeHtml(c.title) + "</h3>",
+    '<div class="meta">',
+      '<span class="chip cat">' + escapeHtml(categoryLabel[c.category] || "Other") + "</span>",
+      '<span class="chip p' + c.priority + '">P' + c.priority + "</span>",
+      '<span class="chip loc">' + escapeHtml(c.location || "No location") + "</span>",
+      '<span class="chip ' + dueCls + '">' + escapeHtml(dueLabel) + "</span>",
+      c.today ? '<span class="chip today">On Today</span>' : '<span class="chip">Not on Today</span>',
+    "</div>",
+    '<div class="timer-hero"><div class="label">Focus timer</div><div class="row">',
+      '<input id="teTimerMins" type="number" min="1" max="240" value="' + mins + '" />',
+      '<span style="color:#9aa3b2;font-size:11px">min</span>',
+      '<button class="tool primary" type="button" id="teStartTimer">Start</button>',
+      '<button class="tool" type="button" id="teStopTimer">Stop</button>',
+      '<span class="big-readout" id="teTimerReadout">' + readout + "</span>",
+    "</div></div>",
+    '<div class="grid">',
+      "<div><label>Today bubble</label><input id=\"teTodayNote\" /></div>",
+      "<div><label>Deadline</label><input id=\"teDeadline\" type=\"datetime-local\" /></div>",
+      "<div><label>Priority</label><select id=\"tePriority\">" + priorityOptions + "</select></div>",
+      "<div><label>Status</label><input id=\"teStatus\" /></div>",
+      "<div><label>Location / app</label><input id=\"teLocation\" /></div>",
+      "<div><label>Bookmark / link</label><input id=\"teBookmark\" /></div>",
+    "</div>",
+    '<div class="grid" style="margin-top:6px">',
+      "<div><label>Next steps</label><textarea id=\"teNext\"></textarea></div>",
+      "<div><label>Notes</label><textarea id=\"teNotes\"></textarea></div>",
+    "</div>",
+    '<div class="actions">',
+      c.today
+        ? '<button class="tool" type="button" id="teToggleToday">Remove from Today</button>'
+        : '<button class="tool primary" type="button" id="teToggleToday">Add to Today</button>',
+      '<button class="tool" type="button" id="teClose">Collapse</button>',
+    "</div>"
+  ].join("");
+  document.getElementById("teTodayNote").value = c.todayNote || "";
+  document.getElementById("teDeadline").value = toDatetimeLocalValue(c.deadline);
+  document.getElementById("teStatus").value = c.status || "";
+  document.getElementById("teLocation").value = c.location || "";
+  document.getElementById("teBookmark").value = c.bookmark || "";
+  document.getElementById("teNext").value = c.next || "";
+  document.getElementById("teNotes").value = c.notes || "";
+  ["teTodayNote","teDeadline","tePriority","teStatus","teLocation","teBookmark","teNext","teNotes","teTimerMins"].forEach((id) => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", applyTodayExpand);
+    el.addEventListener("change", applyTodayExpand);
+  });
+  document.getElementById("teStartTimer").addEventListener("click", () => {
+    const m = Number(document.getElementById("teTimerMins").value) || 25;
+    c.timerMins = m;
+    document.getElementById("fTimerMins").value = m;
+    startTimer(); render();
+    const expand = document.getElementById("todayExpand");
+    if (expand) expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+  document.getElementById("teStopTimer").addEventListener("click", () => { stopTimer(); render(); });
+  document.getElementById("teToggleToday").addEventListener("click", () => toggleToday(c.id, !c.today));
+  document.getElementById("teClose").addEventListener("click", () => { closeProjectDetails(); render(); });
+  placeTodayExpandInline();
+}
+
+function applyTodayExpand() {
+  const c = cards.find((x) => x.id === selectedId);
+  if (!c) return;
+  c.todayNote = document.getElementById("teTodayNote").value.trim();
+  const deadlineVal = document.getElementById("teDeadline").value;
+  c.deadline = deadlineVal ? new Date(deadlineVal).toISOString() : "";
+  c.priority = Number(document.getElementById("tePriority").value) || 2;
+  c.status = document.getElementById("teStatus").value.trim() || "Open";
+  c.location = document.getElementById("teLocation").value.trim();
+  c.bookmark = document.getElementById("teBookmark").value.trim();
+  c.next = document.getElementById("teNext").value.trim();
+  c.notes = document.getElementById("teNotes").value.trim();
+  const minsEl = document.getElementById("teTimerMins");
+  if (minsEl) c.timerMins = Number(minsEl.value) || 25;
+  save();
+  const activeId = document.activeElement ? document.activeElement.id : null;
+  const activePos = document.activeElement && document.activeElement.selectionStart;
+  renderPhases();
+  parkTodayExpand();
+  document.getElementById("todayList").innerHTML = todayCards().map(todayRowHTML).join("");
+  placeTodayExpandInline();
+  bindTileClicks(); bindPhaseDrops(); bindIdeasQuickAdd(); bindStickyInteractions();
+  renderEditor();
+  if (activeId) {
+    const el = document.getElementById(activeId);
+    if (el) {
+      el.focus();
+      if (typeof activePos === "number" && el.setSelectionRange) {
+        try { el.setSelectionRange(activePos, activePos); } catch (e) {}
+      }
+    }
+  }
+}
+
+function visiblePhases() {
+  return prefs.showDone ? PHASES : PHASES.filter((p) => p.id !== "done");
+}
+
+function renderPhases() {
+  const host = document.getElementById("phases");
+  const phases = visiblePhases();
+  host.style.setProperty("--phase-cols", String(phases.length));
+  const hiddenDone = cards.filter((c) => c.lane === "done").length;
+  document.getElementById("phaseHint").textContent =
+    prefs.showDone ? "" : (hiddenDone ? (hiddenDone + " in Done (hidden)") : "");
+  host.innerHTML = phases.map((phase) => {
+    const list = laneCards(phase.id);
+    const body = list.length ? list.map(tileHTML).join("") : '<div class="empty">Drop here</div>';
+    const doneCls = phase.id === "done" ? " phase-done" : "";
+    const quick = phase.id === "ideas" ? (
+      '<div class="ideas-quick-add" id="ideasQuickAdd">' +
+        '<button type="button" class="ideas-quick-btn" id="ideasQuickBtn" title="Add a new idea">+ Quick add</button>' +
+        '<div class="ideas-quick-form" id="ideasQuickForm" hidden>' +
+          '<input class="ideas-quick-input" id="ideasQuickInput" type="text" maxlength="120" placeholder="New idea title…" autocomplete="off" />' +
+          '<button type="button" class="ideas-quick-go" id="ideasQuickGo" title="Add">Add</button>' +
+        "</div>" +
+      "</div>"
+    ) : "";
+    return (
+      '<section class="phase' + doneCls + '" data-lane="' + phase.id + '">' +
+        '<div class="phase-head"><div class="phase-title">' + phase.label + '</div><span class="count">' + list.length + "</span></div>" +
+        '<div class="tiles">' + body + "</div>" + quick + "</section>"
+    );
+  }).join("");
+}
+
+function renderCorkHint() {
+  const cork = document.getElementById("corkboard");
+  const free = freeStickies();
+  if (!free.length && !folders.length) {
+    cork.innerHTML = '<div class="cork-hint"><div>Add a sticky or folder · drag anywhere · drop sticky on project to pin · drop on folder to file</div></div>';
+  } else {
+    cork.innerHTML = "";
+  }
+}
+
+function stickyClassList(s) {
+  return (
+    "sticky " + s.color +
+    " font-" + (s.font || "patrick")
+  );
+}
+
+function primarySelectedStickyId() {
+  if (!selectedStickyIds.size) return null;
+  // Prefer last in iteration order (insertion order = last toggled/selected)
+  let last = null;
+  selectedStickyIds.forEach((id) => { last = id; });
+  return last;
+}
+/** Draft toolbar styles when nothing is selected; stickyDefaults only change via Lock defaults. */
+let stickyToolbarDraft = null;
+
+function readStickyToolbarState() {
+  const fontSel = document.getElementById("stickyFontSelect");
+  const fontSlider = document.getElementById("stickyFontSizeSlider");
+  const noteSlider = document.getElementById("stickyNoteScaleSlider");
+  let color = "yellow";
+  const selSwatch = document.querySelector(".cork-toolbar .swatch.selected");
+  if (selSwatch) color = selSwatch.getAttribute("data-color") || color;
+  return normalizeStickyDefaults({
+    font: fontSel ? fontSel.value : "patrick",
+    fontSizePx: fontSlider ? Number(fontSlider.value) : 15,
+    noteScale: noteSlider ? Number(noteSlider.value) : 1,
+    color: color
+  }, color);
+}
+
+function stickyStyleTarget() {
+  const id = primarySelectedStickyId();
+  if (id) {
+    const s = stickies.find((x) => x.id === id);
+    if (s) return { mode: "note", sticky: s, style: s, ids: Array.from(selectedStickyIds) };
+  }
+  const d = stickyToolbarDraft || getStickyDefaults();
+  return { mode: "draft", sticky: null, style: d, ids: [] };
+}
+
+function syncStickyToolbar() {
+  const target = stickyStyleTarget();
+  const lockBtn = document.getElementById("lockDefaultsBtn");
+  if (lockBtn && !lockBtn.classList.contains("just-locked")) {
+    lockBtn.title = "Lock current toolbar styles (font, size, scale, color) as defaults for new stickies";
+  }
+  const fontSel = document.getElementById("stickyFontSelect");
+  if (fontSel && document.activeElement !== fontSel) fontSel.value = target.style.font || "patrick";
+  const fontPx = resolveFontSizePx(target.style);
+  const noteSc = resolveNoteScale(target.style);
+  const fontSlider = document.getElementById("stickyFontSizeSlider");
+  if (fontSlider && document.activeElement !== fontSlider) fontSlider.value = String(fontPx);
+  const noteSlider = document.getElementById("stickyNoteScaleSlider");
+  if (noteSlider && document.activeElement !== noteSlider) noteSlider.value = String(noteSc);
+  const color = target.style.color || "yellow";
+  document.querySelectorAll(".cork-toolbar .swatch").forEach((btn) => {
+    btn.classList.toggle("selected", btn.getAttribute("data-color") === color);
+  });
+}
+
+function applyStickyStylePatch(patch, opts) {
+  opts = opts || {};
+  const target = stickyStyleTarget();
+  if (target.mode === "note" && target.ids && target.ids.length) {
+    const ids = target.ids.slice();
+    ids.forEach((id) => {
+      const s = stickies.find((x) => x.id === id);
+      if (s && !s.attachedTo && !s.folderId) Object.assign(s, patch);
+    });
+    // Keep selection stable across style applies
+    selectedStickyIds = new Set(ids.filter((id) => stickies.some((s) => s.id === id && !s.attachedTo && !s.folderId)));
+    stickyToolbarDraft = null;
+    if (opts.live) {
+      // In-place update for sliders — no full rebind, and do NOT syncStickyToolbar
+      // (writing input.value mid-drag cancels the first interaction in Chromium/Edge).
+      ids.forEach((id) => {
+        const s = stickies.find((x) => x.id === id);
+        const el = document.querySelector('[data-sticky="' + id + '"]');
+        if (!s || !el) return;
+        el.className = stickyClassList(s) + (selectedStickyIds.has(id) ? " selected-sticky" : "") + (editingStickyId === id ? " editing-sticky" : "");
+        const st = stickySizeInlineStyle(s);
+        if (st.fontSize) el.style.fontSize = st.fontSize;
+        if (st.lineHeight) el.style.lineHeight = st.lineHeight;
+        if (st.width) el.style.width = st.width;
+        if (st.minHeight) el.style.minHeight = st.minHeight;
+        if (st.padding) el.style.padding = st.padding;
+        if (st["--sticky-ta-h"]) el.style.setProperty("--sticky-ta-h", st["--sticky-ta-h"]);
+      });
+      return;
+    }
+    save();
+    renderStickies();
+    bindStickyInteractions();
+    syncStickyToolbar();
+    return;
+  }
+  /* Nothing selected: update draft only — stickyDefaults stay until Lock defaults */
+  const base = stickyToolbarDraft || getStickyDefaults();
+  stickyToolbarDraft = normalizeStickyDefaults(Object.assign({}, base, patch), patch.color || base.color);
+  // Live draft: slider already shows the value; syncing would clobber an in-progress drag.
+  if (!opts.live) syncStickyToolbar();
+}
+
+function lockStickyDefaults() {
+  const locked = readStickyToolbarState();
+  prefs.stickyDefaults = locked;
+  prefs.stickyColor = locked.color;
+  stickyToolbarDraft = null;
+  save();
+  syncStickyToolbar();
+  const btn = document.getElementById("lockDefaultsBtn");
+  if (btn) {
+    btn.classList.add("just-locked");
+    btn.textContent = "Locked ✓";
+    clearTimeout(lockStickyDefaults._flash);
+    lockStickyDefaults._flash = setTimeout(() => {
+      btn.classList.remove("just-locked");
+      btn.textContent = "Lock defaults";
+    }, 1200);
+  }
+}
+
+function pruneStickySelection() {
+  const freeIds = new Set(freeStickies().map((s) => s.id));
+  Array.from(selectedStickyIds).forEach((id) => {
+    if (!freeIds.has(id)) selectedStickyIds.delete(id);
+  });
+  const attachedIds = new Set(stickies.filter((s) => s.attachedTo).map((s) => s.id));
+  Array.from(selectedChipIds).forEach((id) => {
+    if (!attachedIds.has(id)) selectedChipIds.delete(id);
+  });
+}
+function syncStickySelectionClass() {
+  document.querySelectorAll("[data-sticky]").forEach((el) => {
+    el.classList.toggle("selected-sticky", selectedStickyIds.has(el.getAttribute("data-sticky")));
+  });
+}
+/** mode: 'replace' (default click) | 'toggle' (shift/ctrl/cmd) */
+function selectSticky(id, mode) {
+  mode = mode || "replace";
+  const hadSelection = selectedStickyIds.size > 0;
+  if (!id) {
+    selectedStickyIds.clear();
+  } else if (!stickies.some((s) => s.id === id && !s.attachedTo && !s.folderId)) {
+    selectedStickyIds.clear();
+  } else if (mode === "toggle") {
+    if (selectedStickyIds.has(id)) selectedStickyIds.delete(id);
+    else selectedStickyIds.add(id);
+  } else {
+    selectedStickyIds.clear();
+    selectedStickyIds.add(id);
+  }
+  /* Selecting a note: drop draft so toolbar mirrors that sticky immediately */
+  if (selectedStickyIds.size) stickyToolbarDraft = null;
+  else if (hadSelection) stickyToolbarDraft = null;
+  const primary = primarySelectedStickyId();
+  if (primary) {
+    const s = stickies.find((x) => x.id === primary);
+    if (s) bringStickyFront(s);
+  }
+  syncStickyToolbar();
+  syncStickySelectionClass();
+  if (primary) {
+    const el = document.querySelector('[data-sticky="' + primary + '"]');
+    const s = stickies.find((x) => x.id === primary);
+    if (el && s) el.style.zIndex = String(s.z);
+  }
+}
+
+function folderIconHTML(uid) {
+  const u = String(uid || "f").replace(/[^a-zA-Z0-9_-]/g, "") || "f";
+  const g = (n) => n + "-" + u;
+  /* Classic manila: warm tan/cream paper, raised tab, open front flap */
+  return (
+    '<span class="folder-icon" aria-hidden="true">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 78 66" fill="none">' +
+        '<defs>' +
+          '<linearGradient id="' + g("fBack") + '" x1="6" y1="14" x2="72" y2="58" gradientUnits="userSpaceOnUse">' +
+            '<stop stop-color="#C9A878"/><stop offset="1" stop-color="#A88458"/>' +
+          '</linearGradient>' +
+          '<linearGradient id="' + g("fTab") + '" x1="6" y1="6" x2="34" y2="20" gradientUnits="userSpaceOnUse">' +
+            '<stop stop-color="#E8D4B0"/><stop offset="1" stop-color="#D0B488"/>' +
+          '</linearGradient>' +
+          '<linearGradient id="' + g("fBody") + '" x1="4" y1="24" x2="74" y2="60" gradientUnits="userSpaceOnUse">' +
+            '<stop stop-color="#F3E6C8"/><stop offset=".4" stop-color="#E6D2A8"/><stop offset="1" stop-color="#C9A878"/>' +
+          '</linearGradient>' +
+          '<linearGradient id="' + g("fFlap") + '" x1="4" y1="26" x2="74" y2="50" gradientUnits="userSpaceOnUse">' +
+            '<stop stop-color="#FBF3E0"/><stop offset=".5" stop-color="#EAD4AE"/><stop offset="1" stop-color="#D4B890"/>' +
+          '</linearGradient>' +
+          '<linearGradient id="' + g("fPaper") + '" x1="18" y1="16" x2="58" y2="36" gradientUnits="userSpaceOnUse">' +
+            '<stop stop-color="#FFFEF9"/><stop offset="1" stop-color="#F2EADF"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        /* back panel */
+        '<path d="M7 18h22l5.5 5.5H70a5 5 0 015 5V54a5 5 0 01-5 5H8a5 5 0 01-5-5V23a5 5 0 015-5z" fill="url(#' + g("fBack") + ')"/>' +
+        /* tab */
+        '<path d="M7 11c0-1.5 1.2-2.7 2.7-2.7H27l6.2 6.2H9.7A2.7 2.7 0 017 17.2V11z" fill="url(#' + g("fTab") + ')"/>' +
+        '<path d="M8.3 11.8h17.2l4.4 4.4H9.9a1.6 1.6 0 01-1.6-1.6v-2.8z" fill="#F7ECD8" opacity=".7"/>' +
+        /* papers peeking from open flap */
+        '<rect x="15" y="15.5" width="44" height="19" rx="1.5" fill="url(#' + g("fPaper") + ')" transform="rotate(-5 37 25)"/>' +
+        '<rect x="19" y="17.5" width="42" height="17" rx="1.5" fill="#FFFEFA" stroke="#D9CBB0" stroke-width=".75" transform="rotate(2.5 40 26)"/>' +
+        /* body */
+        '<path d="M5 26h68a3 3 0 013 3v25a4 4 0 01-4 4H6a4 4 0 01-4-4V29a3 3 0 013-3z" fill="url(#' + g("fBody") + ')"/>' +
+        /* open front flap */
+        '<path d="M4 27.5h70l-9 23H13L4 27.5z" fill="url(#' + g("fFlap") + ')"/>' +
+        '<path d="M4 27.5h70l-1.5 4H5.5L4 27.5z" fill="#FFFCF3" opacity=".95"/>' +
+        '<path d="M6.5 26.5h65" stroke="#FFF8EC" stroke-width="1.15" stroke-linecap="round" opacity=".75"/>' +
+        '<path d="M13 50.5H65" stroke="#B89568" stroke-width="1" opacity=".32"/>' +
+        /* subtle edge outline for clarity on cork */
+        '<path d="M7 11c0-1.5 1.2-2.7 2.7-2.7H27l6.2 6.2H70a5 5 0 015 5V54a5 5 0 01-5 5H8a5 5 0 01-5-5V23a5 5 0 015-5h.2" stroke="#9A7A52" stroke-width=".55" opacity=".35" fill="none"/>' +
+      '</svg>' +
+    '</span>'
+  );
+}
+function renderFolderElHTML(f) {
+  const selected = selectedFolderIds.has(f.id);
+  const editing = editingFolderId === f.id;
+  const open = openFolderId === f.id;
+  const count = stickiesInFolder(f.id).length;
+  const label = editing
+    ? '<input class="folder-label-input" data-folder-edit="' + f.id + '" value="' + escapeHtml(f.name || "Folder") + '" maxlength="48" />'
+    : '<span class="folder-label">' + escapeHtml(f.name || "Folder") + "</span>";
+  const cls = "cork-folder" + (selected ? " selected-folder" : "") + (open ? " open" : "");
+  const z = f.z || 1;
+  return (
+    '<div class="' + cls + '" data-folder="' + f.id + '" style="z-index:' + z + '" tabindex="0" title="Drop stickies here · click to open">' +
+      '<button type="button" class="folder-del" data-folder-del="' + f.id + '" title="Delete folder (stickies return to cork)">×</button>' +
+      folderIconHTML(f.id) +
+      (count ? '<span class="folder-count">' + count + "</span>" : '<span class="folder-count" hidden>0</span>') +
+      label +
+    "</div>"
+  );
+}
+function renderStickies() {
+  const layer = document.getElementById("stickyLayer");
+  const free = freeStickies();
+  pruneStickySelection();
+  const folderHtml = folders.map((f) => renderFolderElHTML(f)).join("");
+  const stickyHtml = free.map((s) => {
+    const editing = editingStickyId === s.id;
+    const selected = selectedStickyIds.has(s.id);
+    const body = editing
+      ? '<textarea data-sticky-edit="' + s.id + '">' + escapeHtml(s.text) + "</textarea>"
+      : escapeHtml(s.text || "Double-click to edit");
+    const cls = stickyClassList(s) + (selected ? " selected-sticky" : "") + (editing ? " editing-sticky" : "");
+    const z = s.z || 1;
+    return (
+      '<div class="' + cls + '" data-sticky="' + s.id + '" style="z-index:' + z + ';' + stickySizeStyleAttr(s) + '" tabindex="0">' +
+        '<div class="sticky-adhesive" aria-hidden="true"></div>' +
+        '<div class="sticky-corner-hint" aria-hidden="true"></div>' +
+        '<button type="button" class="sticky-del" data-sticky-del="' + s.id + '" title="Crumple and trash">×</button>' +
+        body +
+      "</div>"
+    );
+  }).join("");
+  layer.innerHTML = folderHtml + stickyHtml;
+  free.forEach((s) => {
+    const el = layer.querySelector('[data-sticky="' + s.id + '"]');
+    if (el) positionStickyEl(el, s);
+  });
+  folders.forEach((f) => {
+    const el = layer.querySelector('[data-folder="' + f.id + '"]');
+    if (el) positionStickyEl(el, f);
+  });
+  positionTrashCan();
+  syncStickyToolbar();
+  renderCorkHint();
+  if (typeof renderFolderPopover === "function") renderFolderPopover();
+}
+
+function renderArchive() {
+  const host = document.getElementById("archiveList");
+  if (!archived.length) {
+    host.innerHTML = '<div class="archive-empty">No archived projects. Move Done items here to reclaim space — Restore anytime.</div>';
+    return;
+  }
+  host.innerHTML = archived.map((c) => (
+    '<div class="archive-item accent-' + c.category + '"><div>' +
+      '<div class="title">' + escapeHtml(c.title) + '</div>' +
+      '<div class="meta">' + escapeHtml(categoryLabel[c.category] || "Other") + " · " + escapeHtml(c.status || "") +
+        (c.archivedAt ? " · " + new Date(c.archivedAt).toLocaleDateString() : "") +
+      "</div></div>" +
+      '<div style="display:flex;gap:4px">' +
+        '<button class="tool" type="button" data-restore="' + c.id + '">Restore</button>' +
+        '<button class="tool" type="button" data-purge="' + c.id + '">Delete</button>' +
+      "</div></div>"
+  )).join("");
+}
+
+function renderSideTabs() {
+  if (prefs.sideTab !== "edit" && prefs.sideTab !== "archive") prefs.sideTab = "edit";
+  document.querySelectorAll(".side-tabs button").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-side") === prefs.sideTab);
+  });
+  document.getElementById("paneEdit").hidden = prefs.sideTab !== "edit";
+  document.getElementById("paneArchive").hidden = prefs.sideTab !== "archive";
+}
+
+function applyPrefsUI() {
+  document.body.classList.toggle("density-compact", prefs.density === "compact");
+  document.body.classList.toggle("density-comfortable", prefs.density === "comfortable");
+  document.querySelectorAll("#densitySeg button").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-density") === prefs.density);
+  });
+  document.getElementById("toggleDoneBtn").textContent = prefs.showDone ? "Hide Done" : "Show Done";
+  document.getElementById("toggleDoneBtn").classList.toggle("active", prefs.showDone);
+  document.querySelectorAll(".filter-chip").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-filter") === prefs.filter);
+  });
+  renderSideTabs();
+}
+
+function bindTileClicks() {
+  document.querySelectorAll(".tile, .today-row").forEach((el) => {
+    el.addEventListener("dblclick", (e) => {
+      if (e.target.closest("button, input, select, textarea, a, .sticky-pin")) return;
+      e.preventDefault();
+      const id = el.getAttribute("data-id");
+      if (!id) return;
+      // Toggle close if details already open for this single selection
+      if (detailsOpen && selectedId === id && selectedIds.size <= 1) {
+        closeProjectDetails(); render(); return;
+      }
+      openProjectDetails(id); render();
+      const expand = document.getElementById("todayExpand");
+      if (expand && !expand.hidden) {
+        expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        const focusEl = document.getElementById("teTimerMins") || document.getElementById("teTodayNote");
+        if (focusEl) setTimeout(() => focusEl.focus(), 0);
+      }
+    });
+    el.addEventListener("click", (e) => {
+      if (e.target.closest("button, input, select, textarea, a, .sticky-pin, .handle")) return;
+      if (suppressClick) { suppressClick = false; return; }
+      const id = el.getAttribute("data-id");
+      if (!id) return;
+      const multi = e.shiftKey || e.ctrlKey || e.metaKey;
+      if (multi) {
+        // Multi-select only — never open details
+        const wasOpen = detailsOpen;
+        toggleProjectSelection(id);
+        if (!selectedIds.has(selectedId)) detailsOpen = false;
+        else if (!wasOpen) detailsOpen = false;
+        render();
+        return;
+      }
+      // Plain click on a member of a multi-selection: keep group, set primary (like stickies)
+      if (selectedIds.size > 1 && selectedIds.has(id)) {
+        selectedId = id;
+        render();
+        return;
+      }
+      // Single click selects only — never opens details; if already open, panel follows selection
+      const wasOpen = detailsOpen;
+      selectOnlyProject(id);
+      detailsOpen = wasOpen;
+      render();
+    });
+    el.addEventListener("contextmenu", (e) => {
+      if (e.target.closest("input, textarea, select, a")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = el.getAttribute("data-id");
+      if (!id) return;
+      if (!selectedIds.has(id) || selectedIds.size <= 1) selectOnlyProject(id);
+      else selectedId = id;
+      showProjectContextMenu(e.clientX, e.clientY, id);
+    });
+  });
+  document.querySelectorAll(".tile[data-id], .today-row .handle[data-id]").forEach((el) => {
+    el.addEventListener("dragstart", onDragStart);
+    el.addEventListener("dragend", onDragEnd);
+  });
+  document.querySelectorAll("[data-push]").forEach((btn) => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); pushCard(btn.getAttribute("data-push"), 1); });
+  });
+  document.querySelectorAll("[data-back]").forEach((btn) => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); pushCard(btn.getAttribute("data-back"), -1); });
+  });
+  document.querySelectorAll("[data-today]").forEach((btn) => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); toggleToday(btn.getAttribute("data-today"), true); });
+  });
+  document.querySelectorAll("[data-untoday]").forEach((btn) => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); toggleToday(btn.getAttribute("data-untoday"), false); });
+  });
+  document.querySelectorAll("[data-archive-one]").forEach((btn) => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); archiveCard(btn.getAttribute("data-archive-one")); });
+  });
+  document.querySelectorAll("[data-today-note]").forEach((input) => {
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("dblclick", (e) => e.stopPropagation());
+    input.addEventListener("keydown", (e) => e.stopPropagation());
+    const commit = () => {
+      const id = input.getAttribute("data-today-note");
+      const card = cards.find((x) => x.id === id);
+      if (!card) return;
+      card.todayNote = input.value.trim();
+      save();
+      const te = document.getElementById("teTodayNote");
+      if (te && selectedId === id) te.value = card.todayNote;
+    };
+    input.addEventListener("change", (e) => { e.stopPropagation(); commit(); });
+    input.addEventListener("blur", commit);
+  });
+  document.querySelectorAll("[data-row-timer-mins]").forEach((input) => {
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("dblclick", (e) => e.stopPropagation());
+    input.addEventListener("change", (e) => {
+      e.stopPropagation();
+      const id = input.getAttribute("data-row-timer-mins");
+      const card = cards.find((x) => x.id === id);
+      if (!card) return;
+      card.timerMins = Number(input.value) || 25;
+      save();
+    });
+  });
+  document.querySelectorAll("[data-row-timer-start]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-row-timer-start");
+      openProjectDetails(id);
+      const card = cards.find((x) => x.id === id);
+      const minsInput = document.querySelector('[data-row-timer-mins="' + id + '"]');
+      const mins = Number(minsInput && minsInput.value) || (card && card.timerMins) || 25;
+      if (card) card.timerMins = mins;
+      document.getElementById("fTimerMins").value = mins;
+      startTimer(); render();
+      const expand = document.getElementById("todayExpand");
+      if (expand) expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  });
+  document.querySelectorAll("[data-row-timer-stop]").forEach((btn) => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); stopTimer(); render(); });
+  });
+}
+
+
+function clearStickyDropHighlights() {
+  document.querySelectorAll(".tile.sticky-drop, .today-row.sticky-drop").forEach((t) => t.classList.remove("sticky-drop"));
+}
+
+function stickyIdsForAttach(primaryId) {
+  if (primaryId && selectedStickyIds.has(primaryId) && selectedStickyIds.size > 1) {
+    return Array.from(selectedStickyIds).filter((id) => {
+      const s = stickies.find((x) => x.id === id);
+      return s && !s.attachedTo && !s.folderId;
+    });
+  }
+  return primaryId ? [primaryId] : [];
+}
+
+function chipIdsForMove(primaryId) {
+  if (primaryId && selectedChipIds.has(primaryId) && selectedChipIds.size > 1) {
+    return Array.from(selectedChipIds).filter((id) => stickies.some((s) => s.id === id && s.attachedTo));
+  }
+  return primaryId ? [primaryId] : [];
+}
+
+function attachStickiesToCard(cardId, primaryId, fromChips) {
+  if (!cardId) return false;
+  const ids = fromChips ? chipIdsForMove(primaryId) : stickyIdsForAttach(primaryId);
+  let n = 0;
+  ids.forEach((id) => {
+    const s = stickies.find((x) => x.id === id);
+    if (!s) return;
+    s.attachedTo = cardId;
+    s.folderId = null;
+    n += 1;
+  });
+  if (!n) return false;
+  selectedStickyIds.clear();
+  selectedChipIds.clear();
+  editingStickyId = null;
+  return true;
+}
+
+function unattachStickiesAt(ids, clientX, clientY) {
+  const list = (ids || []).filter(Boolean);
+  let n = 0;
+  list.forEach((id, i) => {
+    const s = stickies.find((x) => x.id === id);
+    if (!s) return;
+    const pct = clientToCorkPercent(clientX + i * 22, clientY + i * 16);
+    s.x = Math.min(90, Math.max(2, pct.x - 4));
+    s.y = Math.min(88, Math.max(2, pct.y - 3));
+    s.attachedTo = null;
+    s.folderId = null;
+    bringStickyFront(s);
+    n += 1;
+  });
+  selectedChipIds.clear();
+  return n > 0;
+}
+
+function findStickyProjectDropTarget(clientX, clientY, ignoreEls) {
+  const ignoreList = (ignoreEls || []).filter(Boolean);
+  const restored = [];
+  const seen = new Set();
+  const hide = (el) => {
+    if (!el || typeof el !== "object") return;
+    if (seen.has(el)) return; // avoid double-hide: restoring "none" would leave stickies ungrabbable
+    seen.add(el);
+    restored.push([el, el.style.pointerEvents]);
+    el.style.pointerEvents = "none";
+  };
+  ignoreList.forEach(hide);
+  document.querySelectorAll(".sticky").forEach(hide);
+
+  let hit = null;
+  let stack = [];
+  try { stack = document.elementsFromPoint(clientX, clientY) || []; } catch (err) { stack = []; }
+  for (let i = 0; i < stack.length; i++) {
+    const node = stack[i];
+    if (!node || !node.closest) continue;
+    const target = node.closest(".tile[data-id], .today-row[data-id]");
+    if (target) { hit = target; break; }
+  }
+
+  if (!hit) {
+    let best = null;
+    let bestDist = STICKY_DROP_SLOP_PX + 0.01;
+    document.querySelectorAll(".tile[data-id], .today-row[data-id]").forEach((el) => {
+      const r = el.getBoundingClientRect();
+      const inX = clientX >= r.left - STICKY_DROP_SLOP_PX && clientX <= r.right + STICKY_DROP_SLOP_PX;
+      const inY = clientY >= r.top - STICKY_DROP_SLOP_PX && clientY <= r.bottom + STICKY_DROP_SLOP_PX;
+      if (!inX || !inY) return;
+      const dx = clientX < r.left ? r.left - clientX : (clientX > r.right ? clientX - r.right : 0);
+      const dy = clientY < r.top ? r.top - clientY : (clientY > r.bottom ? clientY - r.bottom : 0);
+      const dist = Math.hypot(dx, dy);
+      if (dist < bestDist) { bestDist = dist; best = el; }
+    });
+    hit = best;
+  }
+
+  restored.forEach((pair) => {
+    // Clear inline pe when original was unset so CSS .sticky { pointer-events:auto } applies
+    if (pair[1]) pair[0].style.pointerEvents = pair[1];
+    else pair[0].style.removeProperty("pointer-events");
+  });
+  return hit;
+}
+
+
+function isPointerInsideCork(clientX, clientY) {
+  // Whole cork UI (frame + toolbar + stage) — not just cork-stage
+  const root = document.getElementById("corkSection") || stickyCoordRoot();
+  if (!root) return false;
+  const r = root.getBoundingClientRect();
+  return clientX >= r.left && clientX <= r.right && clientY >= r.top && clientY <= r.bottom;
+}
+
+/** Drop-target enlarge/highlight only when drag pointer is outside cork (no in-cork layout shift). */
+function setStickyDropTargetsLive(live) {
+  const on = Boolean(live);
+  document.body.classList.toggle("sticky-is-dragging", on);
+  if (!on) clearStickyDropHighlights();
+}
+
+function setStickyDropHighlight(target) {
+  clearStickyDropHighlights();
+  if (target) target.classList.add("sticky-drop");
+}
+
+function endStickyDragFollow(el) {
+  setStickyDropTargetsLive(false);
+  if (!el) return;
+  el.classList.remove("drag-follow", "dragging", "pending-drag");
+  const badge = el.querySelector(".multi-drag-badge");
+  if (badge) badge.remove();
+  el.style.width = "";
+  el.style.height = "";
+  el.style.transform = "";
+  el.style.removeProperty("pointer-events"); // never leave drag hit-test pe:none stuck
+  // left/top restored by caller via positionStickyEl (cork% → layer px)
+}
+
+function bindPhaseDrops() {
+  document.querySelectorAll(".phase").forEach((phaseEl) => {
+    phaseEl.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      if (dragStickyId) return;
+      phaseEl.classList.add("drag-over");
+    });
+    phaseEl.addEventListener("dragleave", () => phaseEl.classList.remove("drag-over"));
+    phaseEl.addEventListener("drop", (e) => {
+      e.preventDefault();
+      phaseEl.classList.remove("drag-over");
+      if (dragStickyId || e.dataTransfer.types.includes("application/x-sticky")) return;
+      const id = e.dataTransfer.getData("text/plain") || dragId;
+      if (!id || !cards.some((c) => c.id === id)) return;
+      const targetLane = phaseEl.getAttribute("data-lane");
+      const ids = cardIdsForMove(id);
+      const targetTile = e.target.closest(".tile");
+      let beforeId = null;
+      if (targetTile) {
+        const tid = targetTile.getAttribute("data-id");
+        if (tid && !ids.includes(tid)) beforeId = tid;
+      }
+      const primary = moveCardsToLane(ids, targetLane, beforeId) || id;
+      syncProjectSelection(primary, ids);
+      save(); render();
+    });
+  });
+  const bindStickyProjectTarget = (el) => {
+    el.addEventListener("dragover", (e) => {
+      if (!(dragStickyId || (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes("application/x-sticky")))) return;
+      e.preventDefault(); e.stopPropagation();
+      setStickyDropTargetsLive(true);
+      setStickyDropHighlight(el);
+    });
+    el.addEventListener("dragleave", (e) => {
+      if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+      el.classList.remove("sticky-drop");
+    });
+    el.addEventListener("drop", (e) => {
+      const sid = (e.dataTransfer && e.dataTransfer.getData("application/x-sticky")) || dragStickyId;
+      if (!sid) return;
+      e.preventDefault(); e.stopPropagation();
+      clearStickyDropHighlights();
+      const cardId = el.getAttribute("data-id");
+      const sticky = stickies.find((s) => s.id === sid);
+      if (!sticky || !cardId) return;
+      const fromChips = Boolean(sticky.attachedTo);
+      if (!attachStickiesToCard(cardId, sid, fromChips)) {
+        sticky.attachedTo = cardId;
+        editingStickyId = null;
+      }
+      dragStickyId = null;
+      save(); render();
+    });
+  };
+  document.querySelectorAll(".tile[data-id], .today-row[data-id]").forEach(bindStickyProjectTarget);
+}
+
+function bindTodayDrop() {
+  const todayEl = document.getElementById("todayDrop");
+  todayEl.addEventListener("dragover", (e) => {
+    if (dragStickyId || e.dataTransfer.types.includes("application/x-sticky")) return;
+    e.preventDefault(); todayEl.classList.add("drag-over");
+  });
+  todayEl.addEventListener("dragleave", () => todayEl.classList.remove("drag-over"));
+  todayEl.addEventListener("drop", (e) => {
+    if (dragStickyId || e.dataTransfer.types.includes("application/x-sticky")) return;
+    e.preventDefault(); todayEl.classList.remove("drag-over");
+    const id = e.dataTransfer.getData("text/plain") || dragId;
+    if (!id) return;
+    const ids = cardIdsForMove(id);
+    ids.forEach((cid) => {
+      const card = cards.find((c) => c.id === cid);
+      if (card) card.today = true;
+    });
+    syncProjectSelection(id, ids);
+    save(); render();
+  });
+}
+
+function bringStickyFront(s) {
+  if (!s) return;
+  const maxZ = stickies.reduce((m, x) => Math.max(m, typeof x.z === "number" ? x.z : 0), zCounter);
+  zCounter = Math.max(zCounter, maxZ) + 1;
+  s.z = zCounter;
+}
+
+function stickyCoordRoot() {
+  return document.querySelector(".cork-stage") || document.getElementById("corkboard") || document.getElementById("boardRoot");
+}
+
+function clientToCorkPercent(clientX, clientY) {
+  const root = stickyCoordRoot();
+  const rect = root.getBoundingClientRect();
+  const w = Math.max(rect.width, 1);
+  const h = Math.max(rect.height, 1);
+  return {
+    x: ((clientX - rect.left) / w) * 100,
+    y: ((clientY - rect.top) / h) * 100
+  };
+}
+
+/** Map cork-stage % coords onto #stickyLayer (boardRoot overlay) pixel positions. */
+function positionStickyEl(el, s) {
+  if (!el || !s) return;
+  if (el.classList.contains("drag-follow")) return;
+  const layer = document.getElementById("stickyLayer");
+  const stage = stickyCoordRoot();
+  if (!layer || !stage) {
+    el.style.left = s.x + "%";
+    el.style.top = s.y + "%";
+    return;
+  }
+  const layerRect = layer.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
+  const left = (stageRect.left - layerRect.left) + (Number(s.x) / 100) * stageRect.width;
+  const top = (stageRect.top - layerRect.top) + (Number(s.y) / 100) * stageRect.height;
+  el.style.left = left + "px";
+  el.style.top = top + "px";
+}
+
+function repositionAllStickies() {
+  freeStickies().forEach((s) => {
+    const el = document.querySelector('[data-sticky="' + s.id + '"]');
+    if (el) positionStickyEl(el, s);
+  });
+  folders.forEach((f) => {
+    const el = document.querySelector('[data-folder="' + f.id + '"]');
+    if (el) positionStickyEl(el, f);
+  });
+}
+
+/** Keep trash on the cork-stage corner, stacked above the sticky overlay. */
+function positionTrashCan() {
+  const trash = document.getElementById("trashCan");
+  const board = document.getElementById("boardRoot");
+  const stage = stickyCoordRoot();
+  if (!trash || !board || !stage) return;
+  const boardRect = board.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
+  const tw = trash.offsetWidth || 64;
+  const th = trash.offsetHeight || 78;
+  const left = (stageRect.left - boardRect.left) + stageRect.width - tw - 10;
+  const top = (stageRect.top - boardRect.top) + stageRect.height - th - 8;
+  trash.style.left = left + "px";
+  trash.style.top = top + "px";
+  trash.style.right = "auto";
+  trash.style.bottom = "auto";
+}
+
+/** One-time: convert boardRoot-% stickies to cork-stage-% so expand/reflow below cannot shift them. */
+function migrateStickyCoordsToCork() {
+  if (prefs.stickyCoordSpace === "cork") return false;
+  const board = document.getElementById("boardRoot");
+  const stage = stickyCoordRoot();
+  if (!board || !stage || stage === board) {
+    prefs.stickyCoordSpace = "cork";
+    return true;
+  }
+  const boardRect = board.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
+  const bw = Math.max(boardRect.width, 1);
+  const bh = Math.max(boardRect.height, 1);
+  const sw = Math.max(stageRect.width, 1);
+  const sh = Math.max(stageRect.height, 1);
+  stickies.forEach((s) => {
+    if (typeof s.x !== "number" || typeof s.y !== "number") return;
+    const px = boardRect.left + (s.x / 100) * bw;
+    const py = boardRect.top + (s.y / 100) * bh;
+    s.x = Math.min(94, Math.max(0, ((px - stageRect.left) / sw) * 100));
+    s.y = Math.min(92, Math.max(0, ((py - stageRect.top) / sh) * 100));
+  });
+  prefs.stickyCoordSpace = "cork";
+  return true;
+}
+
+function elementFromPointIgnoreSticky(x, y, stickyEl) {
+  const prev = stickyEl.style.pointerEvents;
+  stickyEl.style.pointerEvents = "none";
+  const under = document.elementFromPoint(x, y);
+  if (prev) stickyEl.style.pointerEvents = prev;
+  else stickyEl.style.removeProperty("pointer-events");
+  return under;
+}
+
+function crumpleAndTrash(id, opts) {
+  opts = opts || {};
+  const s = stickies.find((x) => x.id === id);
+  if (!s || animatingStickyIds.has(id)) return;
+  const el = document.querySelector('[data-sticky="' + id + '"]');
+  const trash = document.getElementById("trashCan");
+  animatingStickyIds.add(id);
+  if (editingStickyId === id) editingStickyId = null;
+  selectedStickyIds.delete(id);
+
+  const finishDelete = () => {
+    const copy = Object.assign({}, s);
+    stickies = stickies.filter((x) => x.id !== id);
+    animatingStickyIds.delete(id);
+    trash.classList.remove("hot", "lid-open", "swallowing", "shaking");
+    if (opts.batchCollector) {
+      opts.batchCollector.push(copy);
+      if (typeof opts.onBatchItemDone === "function") opts.onBatchItemDone();
+    } else {
+      recentlyTrashed = [copy];
+      save();
+      render();
+      showTrashUndo();
+    }
+  };
+
+  if (!el) { finishDelete(); return; }
+
+  // Same path for X click and drop-on-trash: crumple → lid open → zoom in → lid close → shake
+  trash.classList.add("hot", "lid-open");
+  trash.classList.remove("swallowing", "shaking");
+  el.classList.add("crumpling");
+  const elRect = el.getBoundingClientRect();
+  const trashRect = trash.getBoundingClientRect();
+  // Aim for the open mouth of the bin (slightly below lid)
+  const dx = (trashRect.left + trashRect.width / 2) - (elRect.left + elRect.width / 2);
+  const dy = (trashRect.top + trashRect.height * 0.42) - (elRect.top + elRect.height / 2);
+
+  setTimeout(() => {
+    el.classList.remove("crumpling");
+    el.classList.add("throwing");
+    el.style.transform = "translate(" + dx + "px," + dy + "px) scale(0.06) rotate(52deg)";
+    el.style.opacity = "0";
+    el.style.borderRadius = "50%";
+    // Lid snaps shut as note arrives
+    setTimeout(() => {
+      trash.classList.remove("lid-open");
+      trash.classList.add("swallowing");
+    }, 280);
+    setTimeout(() => {
+      trash.classList.remove("hot", "swallowing");
+      trash.classList.add("shaking");
+      setTimeout(() => {
+        trash.classList.remove("shaking");
+        finishDelete();
+      }, 420);
+    }, 500);
+  }, 600);
+}
+
+/** Crumple one or many stickies (staggered). Batches undo restore. */
+function crumpleStickies(ids) {
+  const unique = [];
+  const seen = new Set();
+  (ids || []).forEach((id) => {
+    if (!id || seen.has(id)) return;
+    if (!stickies.some((s) => s.id === id)) return;
+    if (animatingStickyIds.has(id)) return;
+    seen.add(id);
+    unique.push(id);
+  });
+  if (!unique.length) return;
+  if (unique.length === 1) {
+    crumpleAndTrash(unique[0]);
+    return;
+  }
+  const batchCollector = [];
+  let remaining = unique.length;
+  const finishBatch = () => {
+    remaining -= 1;
+    if (remaining > 0) return;
+    recentlyTrashed = batchCollector.slice();
+    save();
+    render();
+    showTrashUndo();
+  };
+  unique.forEach((id, i) => {
+    setTimeout(() => {
+      crumpleAndTrash(id, { batchCollector: batchCollector, onBatchItemDone: finishBatch });
+    }, i * 90);
+  });
+}
+
+function showTrashUndo() {
+  const toast = document.getElementById("trashToast");
+  const n = Array.isArray(recentlyTrashed) ? recentlyTrashed.length : (recentlyTrashed ? 1 : 0);
+  const label = toast.querySelector("span");
+  if (label) label.textContent = n > 1 ? (n + " stickies crumpled.") : "Sticky crumpled.";
+  toast.hidden = false;
+  if (trashUndoTimer) clearTimeout(trashUndoTimer);
+  trashUndoTimer = setTimeout(() => {
+    recentlyTrashed = null;
+    toast.hidden = true;
+  }, 5000);
+}
+
+function undoTrash() {
+  if (!recentlyTrashed) return;
+  const items = Array.isArray(recentlyTrashed) ? recentlyTrashed : [recentlyTrashed];
+  items.forEach((s) => {
+    if (s && s.id && !stickies.some((x) => x.id === s.id)) stickies.push(s);
+  });
+  recentlyTrashed = null;
+  document.getElementById("trashToast").hidden = true;
+  if (trashUndoTimer) clearTimeout(trashUndoTimer);
+  save(); render();
+}
+
+/* ===== Cork folders: file / open / rename / delete ===== */
+function clearFolderDropHighlights() {
+  document.querySelectorAll(".cork-folder.drop-target").forEach((el) => el.classList.remove("drop-target"));
+}
+function findFolderDropTarget(clientX, clientY, ignoreEls) {
+  const ignore = new Set((ignoreEls || []).filter(Boolean));
+  const restored = [];
+  ignore.forEach((el) => {
+    if (!el || !el.style) return;
+    restored.push([el, el.style.pointerEvents]);
+    el.style.pointerEvents = "none";
+  });
+  document.querySelectorAll("[data-sticky].dragging, [data-sticky].drag-follow").forEach((el) => {
+    if (ignore.has(el)) return;
+    restored.push([el, el.style.pointerEvents]);
+    el.style.pointerEvents = "none";
+  });
+  const under = document.elementFromPoint(clientX, clientY);
+  restored.forEach(([el, prev]) => {
+    if (prev) el.style.pointerEvents = prev;
+    else el.style.removeProperty("pointer-events");
+  });
+  if (!under || !under.closest) return null;
+  return under.closest("[data-folder]");
+}
+function stickyIdsForFolder(primaryId) {
+  if (primaryId && selectedStickyIds.has(primaryId) && selectedStickyIds.size > 1) {
+    return Array.from(selectedStickyIds).filter((id) => {
+      const s = stickies.find((x) => x.id === id);
+      return s && !s.attachedTo;
+    });
+  }
+  return primaryId ? [primaryId] : [];
+}
+function fileStickiesIntoFolder(folderId, primaryId, animateEls) {
+  const folder = folderById(folderId);
+  if (!folder) return false;
+  const ids = stickyIdsForFolder(primaryId);
+  const toFile = [];
+  ids.forEach((id) => {
+    const s = stickies.find((x) => x.id === id);
+    if (!s || s.attachedTo) return;
+    toFile.push(s);
+  });
+  if (!toFile.length) return false;
+  const folderEl = document.querySelector('[data-folder="' + folderId + '"]');
+  if (folderEl) {
+    folderEl.classList.add("drop-target");
+    setTimeout(() => folderEl.classList.remove("drop-target"), 380);
+  }
+  const finish = () => {
+    toFile.forEach((s) => {
+      s.folderId = folderId;
+      s.attachedTo = null;
+      animatingStickyIds.delete(s.id);
+      selectedStickyIds.delete(s.id);
+    });
+    editingStickyId = null;
+    bringFolderFront(folder);
+    save();
+    render();
+  };
+  const animTargets = (animateEls || []).filter(Boolean);
+  if (!animTargets.length || !folderEl) {
+    finish();
+    return true;
+  }
+  const fRect = folderEl.getBoundingClientRect();
+  const fcx = fRect.left + fRect.width / 2;
+  const fcy = fRect.top + fRect.height / 2;
+  let pending = animTargets.length;
+  animTargets.forEach((el, i) => {
+    const sid = el.getAttribute("data-sticky");
+    if (sid) animatingStickyIds.add(sid);
+    el.classList.remove("drag-follow", "dragging");
+    el.classList.add("filing-into");
+    const r = el.getBoundingClientRect();
+    const dx = fcx - (r.left + r.width / 2);
+    const dy = fcy - (r.top + r.height / 2);
+    el.style.transition = "transform .42s cubic-bezier(.4,.05,.55,1), opacity .42s ease";
+    el.style.transform = "translate(" + dx + "px," + (dy - 6) + "px) scale(0.12) rotate(" + (i % 2 ? 18 : -14) + "deg)";
+    el.style.opacity = "0";
+    setTimeout(() => {
+      pending -= 1;
+      if (pending <= 0) finish();
+    }, 430);
+  });
+  return true;
+}
+function unfileStickyFromFolder(stickyId, clientX, clientY) {
+  const s = stickies.find((x) => x.id === stickyId);
+  if (!s || !s.folderId) return false;
+  const pct = clientToCorkPercent(clientX, clientY);
+  s.x = Math.min(90, Math.max(2, pct.x - 4));
+  s.y = Math.min(88, Math.max(2, pct.y - 3));
+  s.folderId = null;
+  s.attachedTo = null;
+  bringStickyFront(s);
+  selectedStickyIds.clear();
+  selectedStickyIds.add(s.id);
+  return true;
+}
+/** Fan all stickies out of a folder onto the cork near the folder (cascade). Keeps folder. */
+function spreadFolderStickies(folderId) {
+  const folder = folderById(folderId);
+  if (!folder) return false;
+  const contained = stickiesInFolder(folderId);
+  if (!contained.length) return false;
+  contained.forEach((s, i) => {
+    const col = i % 4;
+    const row = Math.floor(i / 4);
+    const jitterX = ((i * 17) % 7) * 0.35;
+    const jitterY = ((i * 13) % 5) * 0.4;
+    s.folderId = null;
+    s.attachedTo = null;
+    s.x = Math.min(90, Math.max(2, folder.x + 7 + col * 5.2 + jitterX));
+    s.y = Math.min(88, Math.max(2, folder.y + 1 + row * 6.2 + (col % 2) * 1.4 + jitterY));
+    bringStickyFront(s);
+  });
+  if (openFolderId === folderId) closeFolderPopover();
+  selectedFolderIds.clear();
+  selectedStickyIds.clear();
+  contained.forEach((s) => selectedStickyIds.add(s.id));
+  save();
+  render();
+  return true;
+}
+function closeFolderPopover() {
+  openFolderId = null;
+  const pop = document.getElementById("folderPopover");
+  if (pop) pop.hidden = true;
+  document.querySelectorAll(".cork-folder.open, .cork-folder.opening").forEach((el) => {
+    el.classList.remove("open", "opening");
+  });
+}
+function renderFolderPopover() {
+  const pop = document.getElementById("folderPopover");
+  if (!pop) return;
+  if (!openFolderId) {
+    pop.hidden = true;
+    return;
+  }
+  const folder = folderById(openFolderId);
+  if (!folder) {
+    closeFolderPopover();
+    return;
+  }
+  const title = document.getElementById("folderPopoverTitle");
+  if (title) title.textContent = folder.name || "Folder";
+  const list = document.getElementById("folderPopoverList");
+  const contained = stickiesInFolder(openFolderId);
+  if (!contained.length) {
+    list.innerHTML = '<div class="fp-empty">Empty folder — drop stickies onto it</div>';
+  } else {
+    list.innerHTML = contained.map((s) => {
+      const preview = (s.text || "Untitled").slice(0, 120);
+      return '<div class="fp-sticky ' + s.color + '" data-fp-sticky="' + s.id + '" draggable="true" title="Drag out to unfile">' +
+        escapeHtml(preview) + "</div>";
+    }).join("");
+  }
+  pop.hidden = false;
+  const spreadBtn = document.getElementById("folderSpreadBtn");
+  if (spreadBtn) {
+    spreadBtn.disabled = !contained.length;
+    spreadBtn.textContent = contained.length
+      ? ("Spread " + contained.length + " onto cork")
+      : "Spread onto cork";
+  }
+  const folderEl = document.querySelector('[data-folder="' + openFolderId + '"]');
+  if (folderEl) {
+    const r = folderEl.getBoundingClientRect();
+    const pw = pop.offsetWidth || 240;
+    const ph = pop.offsetHeight || 180;
+    let left = r.left + r.width / 2 - pw / 2;
+    let top = r.bottom + 8;
+    if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 8);
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (left < 8) left = 8;
+    pop.style.left = left + "px";
+    pop.style.top = top + "px";
+  }
+  bindFolderPopoverInteractions();
+}
+function openFolder(folderId) {
+  const folder = folderById(folderId);
+  if (!folder) return;
+  const el = document.querySelector('[data-folder="' + folderId + '"]');
+  if (openFolderId === folderId) {
+    closeFolderPopover();
+    save();
+    return;
+  }
+  openFolderId = folderId;
+  selectedFolderIds.clear();
+  selectedFolderIds.add(folderId);
+  bringFolderFront(folder);
+  if (el) {
+    el.classList.add("opening", "open");
+    el.style.zIndex = String(folder.z);
+  }
+  renderFolderPopover();
+  save();
+}
+function deleteFolder(folderId) {
+  const folder = folderById(folderId);
+  if (!folder) return;
+  const contained = stickiesInFolder(folderId);
+  contained.forEach((s, i) => {
+    s.folderId = null;
+    s.x = Math.min(90, Math.max(2, folder.x + (i % 3) * 4));
+    s.y = Math.min(88, Math.max(2, folder.y + Math.floor(i / 3) * 5));
+    bringStickyFront(s);
+  });
+  folders = folders.filter((f) => f.id !== folderId);
+  if (openFolderId === folderId) closeFolderPopover();
+  selectedFolderIds.delete(folderId);
+  save();
+  render();
+}
+function addFolder() {
+  const id = "f" + Date.now();
+  const n = folders.length;
+  const maxZ = Math.max(
+    stickies.reduce((m, s) => Math.max(m, typeof s.z === "number" ? s.z : 0), 0),
+    folders.reduce((m, f) => Math.max(m, typeof f.z === "number" ? f.z : 0), zCounter)
+  );
+  zCounter = maxZ + 1;
+  folders.push({
+    id: id,
+    name: "Folder",
+    x: Math.min(80, 12 + (n % 5) * 14),
+    y: Math.min(70, 16 + Math.floor(n / 5) * 16),
+    z: zCounter
+  });
+  selectedFolderIds.clear();
+  selectedFolderIds.add(id);
+  selectedStickyIds.clear();
+  editingFolderId = id;
+  openFolderId = null;
+  save();
+  render();
+  requestAnimationFrame(() => {
+    const input = document.querySelector('[data-folder-edit="' + id + '"]');
+    if (input) {
+      input.focus();
+      try { input.select(); } catch (err) {}
+    }
+  });
+}
+function bindFolderPopoverInteractions() {
+  const list = document.getElementById("folderPopoverList");
+  if (!list) return;
+  list.__fpBound = openFolderId;
+  list.querySelectorAll("[data-fp-sticky]").forEach((el) => {
+    const sid = el.getAttribute("data-fp-sticky");
+    el.addEventListener("dragstart", (e) => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("application/x-folder-sticky", sid);
+      e.dataTransfer.setData("text/plain", "");
+      el.classList.add("dragging-out");
+      dragStickyId = sid;
+    });
+    el.addEventListener("dragend", () => {
+      el.classList.remove("dragging-out");
+      dragStickyId = null;
+    });
+  });
+}
+function syncFolderSelectionClass() {
+  document.querySelectorAll("[data-folder]").forEach((el) => {
+    el.classList.toggle("selected-folder", selectedFolderIds.has(el.getAttribute("data-folder")));
+  });
+}
+function showFolderContextMenu(x, y, folderId) {
+  hideContextMenu();
+  const menu = document.getElementById("ctxMenu");
+  if (!menu) return;
+  menu.appendChild(ctxItem("Open", () => { hideContextMenu(); openFolder(folderId); renderStickies(); bindStickyInteractions(); }));
+  const nSpread = stickiesInFolder(folderId).length;
+  menu.appendChild(ctxItem(nSpread ? ("Spread " + nSpread + " onto cork") : "Spread onto cork", () => {
+    hideContextMenu();
+    if (!nSpread) return;
+    spreadFolderStickies(folderId);
+  }));
+  menu.appendChild(ctxItem("Rename", () => {
+    hideContextMenu();
+    editingFolderId = folderId;
+    renderStickies();
+    bindStickyInteractions();
+    const input = document.querySelector('[data-folder-edit="' + folderId + '"]');
+    if (input) { input.focus(); try { input.select(); } catch (err) {} }
+  }));
+  menu.appendChild(ctxItem("Delete folder", () => {
+    hideContextMenu();
+    const n = stickiesInFolder(folderId).length;
+    if (!confirm(n ? ("Delete folder? " + n + " sticky(s) return to cork.") : "Delete folder?")) return;
+    deleteFolder(folderId);
+  }, { danger: true }));
+  placeContextMenu(menu, x, y);
+}
+function bindFolderInteractions() {
+  document.querySelectorAll("[data-folder]").forEach((el) => {
+    const id = el.getAttribute("data-folder");
+    let pending = false, dragging = false, startX = 0, startY = 0, grabOX = 0, grabOY = 0, moved = false;
+    el.addEventListener("dblclick", (e) => {
+      if (e.target.closest("[data-folder-del], input, button")) return;
+      e.preventDefault(); e.stopPropagation();
+      editingFolderId = id;
+      renderStickies(); bindStickyInteractions();
+      const input = document.querySelector('[data-folder-edit="' + id + '"]');
+      if (input) requestAnimationFrame(() => { input.focus(); try { input.select(); } catch (err) {} });
+    });
+    el.addEventListener("click", (e) => {
+      if (e.target.closest("[data-folder-del], input, button")) return;
+      if (moved || suppressClick) { suppressClick = false; moved = false; return; }
+      e.stopPropagation();
+      if (e.shiftKey || e.ctrlKey || e.metaKey) {
+        if (selectedFolderIds.has(id)) selectedFolderIds.delete(id); else selectedFolderIds.add(id);
+        syncFolderSelectionClass(); return;
+      }
+      openFolder(id); renderStickies(); bindStickyInteractions();
+    });
+    el.addEventListener("pointerdown", (e) => {
+      if (editingFolderId === id) return;
+      if (e.target.closest("[data-folder-del], input, button")) return;
+      if (e.button !== 0 || e.detail >= 2) return;
+      const f = folderById(id); if (!f) return;
+      if (!(e.shiftKey || e.ctrlKey || e.metaKey)) {
+        if (!selectedFolderIds.has(id) || selectedFolderIds.size <= 1) {
+          selectedFolderIds.clear(); selectedFolderIds.add(id);
+        }
+        bringFolderFront(f); el.style.zIndex = String(f.z); syncFolderSelectionClass();
+      }
+      pending = true; dragging = false; moved = false;
+      startX = e.clientX; startY = e.clientY;
+      const rect0 = el.getBoundingClientRect();
+      grabOX = e.clientX - rect0.left; grabOY = e.clientY - rect0.top;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (!pending && !dragging) return;
+      const distPx = Math.hypot(e.clientX - startX, e.clientY - startY);
+      if (!dragging) {
+        if (distPx < STICKY_DRAG_THRESHOLD_PX) return;
+        dragging = true; pending = false; moved = true;
+        closeFolderPopover(); el.classList.add("dragging");
+      }
+      const f = folderById(id); if (!f) return;
+      const layer = document.getElementById("stickyLayer");
+      const layerRect = layer.getBoundingClientRect();
+      el.style.left = (e.clientX - grabOX - layerRect.left) + "px";
+      el.style.top = (e.clientY - grabOY - layerRect.top) + "px";
+      const pct = clientToCorkPercent(e.clientX - grabOX, e.clientY - grabOY);
+      f.x = Math.min(94, Math.max(0, pct.x));
+      f.y = Math.min(92, Math.max(0, pct.y));
+    });
+    el.addEventListener("pointerup", (e) => {
+      if (!pending && !dragging) return;
+      const wasDragging = dragging;
+      pending = false; dragging = false;
+      try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+      el.classList.remove("dragging");
+      const f = folderById(id);
+      if (f) positionStickyEl(el, f);
+      if (wasDragging) { suppressClick = true; save(); renderCorkHint(); }
+    });
+    el.addEventListener("pointercancel", () => {
+      pending = false; dragging = false; el.classList.remove("dragging");
+      const f = folderById(id); if (f) positionStickyEl(el, f);
+    });
+    el.addEventListener("contextmenu", (e) => {
+      if (e.target.closest("input, button")) return;
+      e.preventDefault(); e.stopPropagation();
+      selectedFolderIds.clear(); selectedFolderIds.add(id);
+      showFolderContextMenu(e.clientX, e.clientY, id);
+    });
+  });
+  document.querySelectorAll("[data-folder-edit]").forEach((input) => {
+    const id = input.getAttribute("data-folder-edit");
+    const commit = () => {
+      const f = folderById(id);
+      if (f) f.name = (input.value || "").trim().slice(0, 48) || "Folder";
+      editingFolderId = null;
+      save(); renderStickies(); bindStickyInteractions();
+    };
+    input.addEventListener("blur", commit);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); commit(); }
+      if (e.key === "Escape") {
+        editingFolderId = null; renderStickies(); bindStickyInteractions();
+      }
+      e.stopPropagation();
+    });
+    input.addEventListener("pointerdown", (e) => e.stopPropagation());
+    input.addEventListener("click", (e) => e.stopPropagation());
+  });
+  document.querySelectorAll("[data-folder-del]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const fid = btn.getAttribute("data-folder-del");
+      const f = folderById(fid);
+      const n = stickiesInFolder(fid).length;
+      const label = (f && f.name) || "Folder";
+      if (!confirm(n ? ("Delete folder \"" + label + "\"? " + n + " sticky(s) return to cork.") : ("Delete folder \"" + label + "\"?"))) return;
+      deleteFolder(fid);
+    });
+  });
+}
+
+function bindStickyInteractions() {
+  const cork = document.getElementById("corkboard");
+  const trash = document.getElementById("trashCan");
+
+  document.querySelectorAll("[data-sticky]").forEach((el) => {
+    const id = el.getAttribute("data-sticky");
+    let pending = false, dragging = false, startX = 0, startY = 0, origX = 0, origY = 0, moved = false;
+    let suppressDragUntil = 0;
+
+    let grabOX = 0, grabOY = 0, startW = 0;
+    const clearDragVisual = () => {
+      endStickyDragFollow(el);
+      trash.classList.remove("hot");
+      clearStickyDropHighlights();
+    };
+
+    const enterEdit = () => {
+      pending = false;
+      dragging = false;
+      moved = false;
+      dragStickyId = null;
+      clearDragVisual();
+      suppressDragUntil = Date.now() + 400;
+      selectedStickyIds.clear();
+      selectedStickyIds.add(id);
+      editingStickyId = id;
+      renderStickies(); bindStickyInteractions();
+      const ta = document.querySelector('[data-sticky-edit="' + id + '"]');
+      if (ta) {
+        requestAnimationFrame(() => {
+          ta.focus();
+          try { ta.select(); } catch (err) {}
+        });
+      }
+    };
+
+    el.addEventListener("dblclick", (e) => {
+      if (e.target.closest("[data-sticky-del], button, textarea")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      enterEdit();
+    });
+    el.addEventListener("contextmenu", (e) => {
+      if (e.target.closest("textarea, button, [data-sticky-del]")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!selectedStickyIds.has(id) || selectedStickyIds.size <= 1) selectSticky(id, "replace");
+      showStickyContextMenu(e.clientX, e.clientY, id);
+    });
+
+    el.addEventListener("pointerdown", (e) => {
+      if (editingStickyId === id) return;
+      if (e.target.closest("[data-sticky-del], button, textarea")) return;
+      if (e.button !== 0) return;
+      // Second click of a dblclick — never start a drag; let dblclick enter edit.
+      if (e.detail >= 2) {
+        pending = false;
+        dragging = false;
+        dragStickyId = null;
+        clearDragVisual();
+        suppressDragUntil = Date.now() + 400;
+        return;
+      }
+      if (Date.now() < suppressDragUntil) return;
+      const s = stickies.find((x) => x.id === id);
+      if (!s || s.attachedTo) return;
+      const multi = e.shiftKey || e.ctrlKey || e.metaKey;
+      if (multi) {
+        selectSticky(id, "toggle");
+      } else if (!selectedStickyIds.has(id) || selectedStickyIds.size <= 1) {
+        selectSticky(id, "replace");
+      } else {
+        // Clicking one of a multi-selection without modifier: keep group until drag or empty click;
+        // still bring this note to front as the active handle.
+        bringStickyFront(s);
+        el.style.zIndex = String(s.z);
+        syncStickyToolbar();
+        syncStickySelectionClass();
+      }
+      if (!multi) {
+        bringStickyFront(s);
+        el.style.zIndex = String(s.z);
+      }
+      pending = true;
+      dragging = false;
+      moved = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      origX = s.x;
+      origY = s.y;
+      const rect0 = el.getBoundingClientRect();
+      grabOX = e.clientX - rect0.left;
+      grabOY = e.clientY - rect0.top;
+      startW = rect0.width;
+      el.classList.add("pending-drag");
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      // dragStickyId stays null until movement crosses threshold
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (!pending && !dragging) return;
+      const root = stickyCoordRoot();
+      const rootRect = root.getBoundingClientRect();
+      if (!rootRect.width || !rootRect.height) return;
+      const distPx = Math.hypot(e.clientX - startX, e.clientY - startY);
+      if (!dragging) {
+        if (distPx < STICKY_DRAG_THRESHOLD_PX) return;
+        dragging = true;
+        pending = false;
+        moved = true;
+        dragStickyId = id;
+        el.classList.remove("pending-drag");
+        el.classList.add("dragging", "drag-follow");
+        // Inside cork: no tile/Today enlarge. Live drop targets only once pointer leaves cork.
+        setStickyDropTargetsLive(!isPointerInsideCork(e.clientX, e.clientY));
+        if (startW) el.style.width = startW + "px";
+        const multiN = (selectedStickyIds.has(id) && selectedStickyIds.size > 1) ? selectedStickyIds.size : 0;
+        if (multiN > 1 && !el.querySelector(".multi-drag-badge")) {
+          const b = document.createElement("span");
+          b.className = "multi-drag-badge";
+          b.textContent = String(multiN);
+          el.appendChild(b);
+        }
+      }
+      const s = stickies.find((x) => x.id === id);
+      if (!s) return;
+      // Follow pointer across Today / phase tiles (fixed), while keeping cork % for non-attach drops
+      const followLeft = e.clientX - grabOX;
+      const followTop = e.clientY - grabOY;
+      el.style.left = followLeft + "px";
+      el.style.top = followTop + "px";
+      const pct = clientToCorkPercent(followLeft + grabOX, followTop + grabOY);
+      s.x = Math.min(94, Math.max(0, pct.x - (grabOX / Math.max(rootRect.width, 1)) * 100));
+      s.y = Math.min(92, Math.max(0, pct.y - (grabOY / Math.max(rootRect.height, 1)) * 100));
+
+      const outsideCork = !isPointerInsideCork(e.clientX, e.clientY);
+      setStickyDropTargetsLive(outsideCork);
+      let dropTarget = null;
+      let folderTarget = null;
+      if (outsideCork) {
+        dropTarget = findStickyProjectDropTarget(e.clientX, e.clientY, [el]);
+        setStickyDropHighlight(dropTarget);
+        clearFolderDropHighlights();
+      } else {
+        clearStickyDropHighlights();
+        folderTarget = findFolderDropTarget(e.clientX, e.clientY, [el]);
+        clearFolderDropHighlights();
+        if (folderTarget) folderTarget.classList.add("drop-target");
+      }
+      const overTrash = !dropTarget && !folderTarget && (function () {
+        const under = elementFromPointIgnoreSticky(e.clientX, e.clientY, el);
+        return under && under.closest && under.closest("#trashCan");
+      })();
+      trash.classList.toggle("hot", Boolean(overTrash));
+    });
+    el.addEventListener("pointerup", (e) => {
+      if (!pending && !dragging) return;
+      const wasDragging = dragging;
+      pending = false;
+      dragging = false;
+      try { el.releasePointerCapture(e.pointerId); } catch (err) {}
+      const s = stickies.find((x) => x.id === id);
+      trash.classList.remove("hot");
+      const outsideCork = wasDragging && !isPointerInsideCork(e.clientX, e.clientY);
+      const dropTarget = outsideCork ? findStickyProjectDropTarget(e.clientX, e.clientY, [el]) : null;
+      clearStickyDropHighlights();
+      setStickyDropTargetsLive(false);
+
+      if (!wasDragging) {
+        endStickyDragFollow(el);
+        // Click without drag: if multi-select group and no modifier, collapse to this sticky.
+        const multiKey = e.shiftKey || e.ctrlKey || e.metaKey;
+        if (!multiKey && selectedStickyIds.size > 1 && selectedStickyIds.has(id)) {
+          selectSticky(id, "replace");
+        }
+        dragStickyId = null;
+        save();
+        suppressClick = false;
+        return;
+      }
+
+      const under = elementFromPointIgnoreSticky(e.clientX, e.clientY, el);
+      if (under && under.closest && under.closest("#trashCan")) {
+        endStickyDragFollow(el);
+        dragStickyId = null;
+        clearFolderDropHighlights();
+        if (selectedStickyIds.has(id) && selectedStickyIds.size > 1) {
+          crumpleStickies(Array.from(selectedStickyIds));
+        } else {
+          crumpleAndTrash(id);
+        }
+        return;
+      }
+      const folderDrop = (!outsideCork && findFolderDropTarget(e.clientX, e.clientY, [el])) || null;
+      clearFolderDropHighlights();
+      if (folderDrop && s) {
+        const fid = folderDrop.getAttribute("data-folder");
+        endStickyDragFollow(el);
+        dragStickyId = null;
+        const animEls = [el];
+        if (selectedStickyIds.has(id) && selectedStickyIds.size > 1) {
+          selectedStickyIds.forEach((oid) => {
+            if (oid === id) return;
+            const oel = document.querySelector('[data-sticky="' + oid + '"]');
+            if (oel) animEls.push(oel);
+          });
+        }
+        if (fileStickiesIntoFolder(fid, id, animEls)) return;
+      }
+      if (dropTarget && s) {
+        const cardId = dropTarget.getAttribute("data-id");
+        endStickyDragFollow(el);
+        dragStickyId = null;
+        if (attachStickiesToCard(cardId, id, false)) {
+          save(); render();
+          return;
+        }
+        s.attachedTo = cardId;
+        s.folderId = null;
+        save(); render();
+        return;
+      }
+      // Snap back to cork % (visual via boardRoot overlay px)
+      if (s) {
+        const pct = clientToCorkPercent(e.clientX - grabOX, e.clientY - grabOY);
+        s.x = Math.min(94, Math.max(0, pct.x));
+        s.y = Math.min(92, Math.max(0, pct.y));
+      }
+      endStickyDragFollow(el);
+      if (s) positionStickyEl(el, s);
+      dragStickyId = null;
+      if (moved) { save(); renderCorkHint(); }
+      else save();
+      suppressClick = moved;
+    });
+    el.addEventListener("pointercancel", () => {
+      pending = false;
+      dragging = false;
+      const sCancel = stickies.find((x) => x.id === id);
+      endStickyDragFollow(el);
+      if (sCancel) positionStickyEl(el, sCancel);
+      dragStickyId = null;
+      trash.classList.remove("hot");
+      setStickyDropTargetsLive(false);
+      clearFolderDropHighlights();
+    });
+  });
+
+  document.querySelectorAll("[data-sticky-edit]").forEach((ta) => {
+    const id = ta.getAttribute("data-sticky-edit");
+    const commit = () => {
+      const s = stickies.find((x) => x.id === id);
+      if (s) s.text = ta.value;
+      editingStickyId = null; save(); renderStickies(); bindStickyInteractions();
+    };
+    ta.addEventListener("blur", commit);
+    ta.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { editingStickyId = null; renderStickies(); bindStickyInteractions(); }
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit(); }
+      e.stopPropagation();
+    });
+    ta.addEventListener("mousedown", (e) => e.stopPropagation());
+    ta.addEventListener("pointerdown", (e) => e.stopPropagation());
+    ta.addEventListener("click", (e) => e.stopPropagation());
+  });
+
+  document.querySelectorAll("[data-sticky-del]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      crumpleAndTrash(btn.getAttribute("data-sticky-del"));
+    });
+  });
+
+  document.querySelectorAll("[data-sticky-chip]").forEach((chip) => {
+    const chipId = chip.getAttribute("data-sticky-chip");
+    chip.classList.toggle("chip-selected", selectedChipIds.has(chipId));
+    chip.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const multi = e.shiftKey || e.ctrlKey || e.metaKey;
+      if (multi) {
+        if (selectedChipIds.has(chipId)) selectedChipIds.delete(chipId);
+        else selectedChipIds.add(chipId);
+      } else {
+        selectedChipIds.clear();
+        selectedChipIds.add(chipId);
+      }
+      document.querySelectorAll("[data-sticky-chip]").forEach((c) => {
+        c.classList.toggle("chip-selected", selectedChipIds.has(c.getAttribute("data-sticky-chip")));
+      });
+    });
+    chip.addEventListener("dragstart", (e) => {
+      e.stopPropagation();
+      dragStickyId = chipId;
+      if (!selectedChipIds.has(chipId)) {
+        selectedChipIds.clear();
+        selectedChipIds.add(chipId);
+      }
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("application/x-sticky", dragStickyId);
+      e.dataTransfer.setData("text/plain", "");
+      setStickyDropTargetsLive(true);
+    });
+    chip.addEventListener("dragend", () => {
+      dragStickyId = null;
+      cork.classList.remove("drag-over");
+      setStickyDropTargetsLive(false);
+    });
+    chip.addEventListener("dblclick", (e) => {
+      e.stopPropagation();
+      const s = stickies.find((x) => x.id === chipId);
+      if (!s) return;
+      const next = prompt("Edit sticky", s.text || "");
+      if (next === null) return;
+      s.text = next; save(); render();
+    });
+  });
+
+  const unattachDrop = (e) => {
+    const fsid = e.dataTransfer.getData("application/x-folder-sticky");
+    if (fsid) {
+      e.preventDefault();
+      cork.classList.remove("drag-over");
+      if (unfileStickyFromFolder(fsid, e.clientX, e.clientY)) {
+        closeFolderPopover();
+        dragStickyId = null;
+        save(); render();
+      }
+      return;
+    }
+    const sid = e.dataTransfer.getData("application/x-sticky") || dragStickyId;
+    if (!sid) return;
+    e.preventDefault();
+    cork.classList.remove("drag-over");
+    setStickyDropTargetsLive(false);
+    const ids = chipIdsForMove(sid);
+    if (!unattachStickiesAt(ids, e.clientX, e.clientY)) return;
+    dragStickyId = null;
+    save(); render();
+  };
+  cork.ondragover = (e) => {
+    const types = e.dataTransfer && e.dataTransfer.types ? Array.from(e.dataTransfer.types) : [];
+    if (!(dragStickyId || types.includes("application/x-sticky") || types.includes("application/x-folder-sticky"))) return;
+    e.preventDefault(); cork.classList.add("drag-over");
+    setStickyDropTargetsLive(false);
+  };
+  cork.ondragleave = () => cork.classList.remove("drag-over");
+  cork.ondrop = unattachDrop;
+
+  const corkSection = document.getElementById("corkSection");
+  corkSection.ondragover = (e) => {
+    const types = e.dataTransfer && e.dataTransfer.types ? Array.from(e.dataTransfer.types) : [];
+    if (!(dragStickyId || types.includes("application/x-sticky") || types.includes("application/x-folder-sticky"))) return;
+    e.preventDefault();
+    setStickyDropTargetsLive(false);
+  };
+  corkSection.ondrop = (e) => {
+    if (e.target.closest && e.target.closest(".tile")) return;
+    unattachDrop(e);
+  };
+  bindFolderInteractions();
+}
+
+(function initStickySelectionDismiss() {
+  if (window.__stickySelectDismissBound) return;
+  window.__stickySelectDismissBound = true;
+  // Clear selection on empty cork click (not on sticky / toolbar / trash)
+  const clearIfEmptyCork = (e) => {
+    if (!selectedStickyIds.size) return;
+    if (editingStickyId) return;
+    if (e.target.closest && e.target.closest("[data-sticky], [data-folder], #folderPopover, #corkToolbar, .cork-toolbar, #trashCan, button, input, select, textarea, a")) return;
+    const cork = document.getElementById("corkboard");
+    const corkSection = document.getElementById("corkSection");
+    const corkStage = cork && cork.parentElement;
+    const onCork = (cork && cork.contains(e.target))
+      || (corkStage && corkStage.contains(e.target))
+      || (corkSection && e.target === corkSection);
+    if (!onCork) return;
+    selectedStickyIds.clear();
+    syncStickyToolbar();
+    syncStickySelectionClass();
+  };
+  document.addEventListener("pointerdown", clearIfEmptyCork, true);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (editingStickyId) return;
+      if (!selectedStickyIds.size) return;
+      selectedStickyIds.clear();
+      syncStickyToolbar();
+      syncStickySelectionClass();
+      return;
+    }
+    // Delete / Backspace crumples all selected when not typing in an edit field
+    if (e.key !== "Delete" && e.key !== "Backspace") return;
+    if (editingStickyId) return;
+    const t = e.target;
+    const tag = (t && t.tagName) ? t.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "textarea" || tag === "select" || (t && t.isContentEditable)) return;
+    if (!selectedStickyIds.size) return;
+    e.preventDefault();
+    const ids = Array.from(selectedStickyIds);
+    crumpleStickies(ids);
+  });
+})();
+
+function bindArchiveActions() {
+  document.querySelectorAll("[data-restore]").forEach((btn) => {
+    btn.addEventListener("click", () => restoreArchived(btn.getAttribute("data-restore")));
+  });
+  document.querySelectorAll("[data-purge]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!confirm("Permanently delete this archived project?")) return;
+      archived = archived.filter((c) => c.id !== btn.getAttribute("data-purge"));
+      save(); render();
+    });
+  });
+}
+
+function renderEditor() {
+  const empty = document.getElementById("editorEmpty");
+  const form = document.getElementById("editorForm");
+  const c = cards.find((x) => x.id === selectedId);
+  if (!c || !detailsOpen) { empty.hidden = false; form.hidden = true; return; }
+  empty.hidden = true; form.hidden = false;
+  document.getElementById("editorHeading").textContent = c.title || "Edit";
+  setField("fTitle", c.title); setField("fCategory", c.category); setField("fLane", c.lane);
+  setField("fPriority", String(c.priority)); setField("fStatus", c.status);
+  setField("fLocation", c.location); setField("fBookmark", c.bookmark);
+  setField("fNext", c.next); setField("fNotes", c.notes); setField("fTodayNote", c.todayNote);
+  setDeadlineField(c.deadline);
+  const todayBox = document.getElementById("fToday");
+  if (document.activeElement !== todayBox) todayBox.checked = Boolean(c.today);
+  const minsEl = document.getElementById("fTimerMins");
+  if (document.activeElement !== minsEl) minsEl.value = Number(c.timerMins) > 0 ? c.timerMins : 25;
+}
+function setField(id, value) {
+  const el = document.getElementById(id);
+  if (document.activeElement === el) return;
+  el.value = value || "";
+}
+function render() {
+  applyPrefsUI(); renderToday(); renderPhases(); renderStickies(); renderArchive();
+  bindTileClicks(); bindPhaseDrops(); bindIdeasQuickAdd(); bindStickyInteractions(); bindArchiveActions(); renderEditor();
+}
+function toDatetimeLocalValue(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + "T" + pad(d.getHours()) + ":" + pad(d.getMinutes());
+}
+function setDeadlineField(value) {
+  const el = document.getElementById("fDeadline");
+  if (document.activeElement === el) return;
+  el.value = toDatetimeLocalValue(value);
+}
+function formatTimer(ms) {
+  if (ms < 0) ms = 0;
+  const total = Math.ceil(ms / 1000);
+  return String(Math.floor(total / 60)).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0");
+}
+function tickTimer() {
+  const el = document.getElementById("timerReadout");
+  if (!timerEndsAt) { if (el) el.textContent = "--:--"; return; }
+  const left = timerEndsAt - Date.now();
+  const stamp = formatTimer(left);
+  if (el) el.textContent = stamp;
+  const te = document.getElementById("teTimerReadout");
+  if (te && timerCardId === selectedId) te.textContent = stamp;
+  document.querySelectorAll("[data-row-timer-readout]").forEach((node) => {
+    if (node.getAttribute("data-row-timer-readout") === timerCardId) node.textContent = stamp;
+  });
+  if (left <= 0) {
+    clearInterval(timerHandle); timerHandle = null; timerEndsAt = null;
+    if (el) el.textContent = "Done";
+    document.querySelectorAll("[data-row-timer-readout]").forEach((node) => {
+      if (node.getAttribute("data-row-timer-readout") === timerCardId) node.textContent = "Done";
+    });
+    try {
+      if (window.Notification && Notification.permission === "granted") {
+        new Notification("Focus timer done", { body: "Time is up on Active Projects." });
+      } else { alert("Focus timer done."); }
+    } catch (e) { alert("Focus timer done."); }
+  }
+}
+function startTimer() {
+  const mins = Number(document.getElementById("fTimerMins").value) || 25;
+  timerEndsAt = Date.now() + mins * 60 * 1000; timerCardId = selectedId;
+  if (timerHandle) clearInterval(timerHandle);
+  timerHandle = setInterval(tickTimer, 250); tickTimer();
+  if (window.Notification && Notification.permission === "default") Notification.requestPermission();
+}
+function stopTimer() {
+  if (timerHandle) clearInterval(timerHandle);
+  timerHandle = null; timerEndsAt = null; timerCardId = null;
+  document.getElementById("timerReadout").textContent = "--:--";
+}
+
+function applyFromEditor() {
+  const c = cards.find((x) => x.id === selectedId);
+  if (!c) return;
+  const prevLane = c.lane;
+  c.title = document.getElementById("fTitle").value.trim() || "Untitled";
+  c.category = document.getElementById("fCategory").value;
+  c.lane = mapLegacyLane(document.getElementById("fLane").value);
+  c.priority = Number(document.getElementById("fPriority").value) || 2;
+  c.status = document.getElementById("fStatus").value.trim() || "Open";
+  c.location = document.getElementById("fLocation").value.trim();
+  c.bookmark = document.getElementById("fBookmark").value.trim();
+  c.next = document.getElementById("fNext").value.trim();
+  c.notes = document.getElementById("fNotes").value.trim();
+  c.todayNote = document.getElementById("fTodayNote").value.trim();
+  const deadlineVal = document.getElementById("fDeadline").value;
+  c.deadline = deadlineVal ? new Date(deadlineVal).toISOString() : "";
+  c.today = document.getElementById("fToday").checked;
+  c.timerMins = Number(document.getElementById("fTimerMins").value) || 25;
+  if (prevLane !== c.lane) {
+    c.order = cards.filter((x) => x.lane === c.lane && x.id !== c.id).length;
+    reindexLane(prevLane); reindexLane(c.lane);
+  }
+  save(); render();
+}
+["fTitle","fCategory","fLane","fPriority","fStatus","fLocation","fBookmark","fNext","fNotes","fToday","fTodayNote","fDeadline","fTimerMins"].forEach((id) => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", applyFromEditor);
+  el.addEventListener("change", applyFromEditor);
+});
+
+function toggleToday(id, on) {
+  const c = cards.find((x) => x.id === id);
+  if (!c) return;
+  c.today = on === true ? true : on === false ? false : !c.today;
+  selectOnlyProject(id); save(); render();
+}
+function moveInLane(id, delta) {
+  const c = cards.find((x) => x.id === id);
+  if (!c) return;
+  const list = cards.filter((x) => x.lane === c.lane).sort((a, b) => a.order - b.order);
+  const idx = list.findIndex((x) => x.id === id);
+  const swap = list[idx + delta];
+  if (!swap) return;
+  const tmp = c.order; c.order = swap.order; swap.order = tmp;
+  selectOnlyProject(id); save(); render();
+}
+function pushCard(id, dir) {
+  const c = cards.find((x) => x.id === id);
+  if (!c) return;
+  const prev = c.lane;
+  c.lane = dir > 0 ? nextPhase(c.lane) : prevPhase(c.lane);
+  if (c.lane === prev) return;
+  c.order = cards.filter((x) => x.lane === c.lane && x.id !== id).length;
+  reindexLane(prev); reindexLane(c.lane);
+  selectOnlyProject(id); save(); render();
+}
+function archiveCard(id) {
+  const c = cards.find((x) => x.id === id);
+  if (!c) return;
+  const lane = c.lane;
+  cards = cards.filter((x) => x.id !== id);
+  stickies.forEach((s) => { if (s.attachedTo === id) s.attachedTo = null; });
+  archived.unshift(Object.assign({}, c, { archivedAt: new Date().toISOString(), lane: "done" }));
+  if (selectedId === id) { selectedId = null; detailsOpen = false; }
+  selectedIds.delete(id);
+  if (!selectedIds.size) detailsOpen = false;
+  reindexLane(lane); save(); render();
+}
+function restoreArchived(id) {
+  const idx = archived.findIndex((c) => c.id === id);
+  if (idx < 0) return;
+  const c = archived.splice(idx, 1)[0];
+  delete c.archivedAt;
+  c.lane = c.lane === "done" ? "review" : mapLegacyLane(c.lane);
+  c.order = cards.filter((x) => x.lane === c.lane).length;
+  cards.push(normalizeCard(c, cards.length));
+  openProjectDetails(c.id); save(); render();
+}
+function onDragStart(e) {
+  e.stopPropagation();
+  dragId = e.currentTarget.getAttribute("data-id");
+  // Unselected tile drag: select only it so a stale multi-group is not moved
+  if (dragId && !selectedIds.has(dragId)) selectOnlyProject(dragId);
+  document.body.classList.add("tile-is-dragging");
+  const ids = cardIdsForMove(dragId);
+  ids.forEach((cid) => {
+    document.querySelectorAll('.tile[data-id="' + cid + '"], .today-row[data-id="' + cid + '"]').forEach((tile) => {
+      tile.classList.add("dragging");
+    });
+  });
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", dragId);
+}
+function onDragEnd() {
+  document.body.classList.remove("tile-is-dragging");
+  document.querySelectorAll(".tile.dragging, .today-row.dragging").forEach((tile) => tile.classList.remove("dragging"));
+  document.querySelectorAll(".phase").forEach((l) => l.classList.remove("drag-over"));
+  document.getElementById("todayDrop").classList.remove("drag-over");
+  suppressClick = true; dragId = null;
+}
+function addProject(title) {
+  const id = "c" + Date.now();
+  const name = (typeof title === "string" && title.trim()) ? title.trim() : "New idea";
+  cards.push({
+    id, lane: "ideas", category: "idea", title: name, status: "Idea",
+    location: "", bookmark: "", next: "", notes: "", todayNote: "", deadline: "",
+    timerMins: 25, priority: 2, today: false,
+    order: cards.filter((c) => c.lane === "ideas").length
+  });
+  openProjectDetails(id); save(); render();
+  const titleEl = document.getElementById("fTitle");
+  if (titleEl) { titleEl.focus(); titleEl.select(); }
+  return id;
+}
+function addIdeaQuick(title) {
+  return addProject(title);
+}
+function bindIdeasQuickAdd() {
+  const btn = document.getElementById("ideasQuickBtn");
+  const form = document.getElementById("ideasQuickForm");
+  const input = document.getElementById("ideasQuickInput");
+  const go = document.getElementById("ideasQuickGo");
+  if (!btn || !form || !input || !go) return;
+  const openForm = () => {
+    btn.hidden = true;
+    form.hidden = false;
+    input.value = "";
+    requestAnimationFrame(() => { input.focus(); });
+  };
+  const closeForm = () => {
+    form.hidden = true;
+    btn.hidden = false;
+    input.value = "";
+  };
+  const commit = () => {
+    const title = input.value.trim() || "New idea";
+    closeForm();
+    addIdeaQuick(title);
+  };
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    openForm();
+  });
+  go.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    commit();
+  });
+  input.addEventListener("keydown", (e) => {
+    e.stopPropagation();
+    if (e.key === "Enter") { e.preventDefault(); commit(); }
+    if (e.key === "Escape") { e.preventDefault(); closeForm(); }
+  });
+  input.addEventListener("click", (e) => e.stopPropagation());
+  input.addEventListener("mousedown", (e) => e.stopPropagation());
+}
+function showStickyCreateEffect(stickyId) {
+  const stickyEl = document.querySelector('[data-sticky="' + stickyId + '"]');
+  if (!stickyEl) return;
+  const s = stickies.find((x) => x.id === stickyId);
+  if (s) {
+    bringStickyFront(s);
+    stickyEl.style.zIndex = String(s.z);
+  }
+
+  // Peel-on / unstick onto cork — force a fresh animation frame so it always runs
+  stickyEl.classList.remove("sticky-peeling-on");
+  void stickyEl.offsetWidth;
+  stickyEl.classList.add("sticky-peeling-on");
+  const clearPeel = (e) => {
+    if (e && e.animationName && e.animationName !== "stickyPeelOn") return;
+    stickyEl.classList.remove("sticky-peeling-on");
+    stickyEl.removeEventListener("animationend", clearPeel);
+  };
+  stickyEl.addEventListener("animationend", clearPeel);
+  setTimeout(() => {
+    stickyEl.classList.remove("sticky-peeling-on");
+    stickyEl.removeEventListener("animationend", clearPeel);
+  }, 1400);
+
+  // Light bulb — child of sticky so it settles with peel motion (same timing family)
+  stickyEl.querySelectorAll(".sticky-idea-pop").forEach((n) => n.remove());
+  const pop = document.createElement("div");
+  pop.className = "sticky-idea-pop";
+  pop.setAttribute("aria-hidden", "true");
+  pop.textContent = "💡";
+  stickyEl.appendChild(pop);
+  setTimeout(() => { if (pop.parentNode) pop.parentNode.removeChild(pop); }, 1300);
+}
+
+/** Predictable cork spawn: cascade from last free sticky (small step), else fixed origin. Always clamped to cork bounds. */
+function nextStickySpawnPos() {
+  const ORIGIN_X = 12;
+  const ORIGIN_Y = 10;
+  const STEP_X = 2.8;
+  const STEP_Y = 2.4;
+  const MAX_X = 78;
+  const MAX_Y = 68;
+  const free = freeStickies();
+  if (!free.length) {
+    return { x: ORIGIN_X, y: ORIGIN_Y };
+  }
+  const last = free.slice().sort((a, b) => (b.z || 0) - (a.z || 0))[0];
+  let x = (typeof last.x === "number" ? last.x : ORIGIN_X) + STEP_X;
+  let y = (typeof last.y === "number" ? last.y : ORIGIN_Y) + STEP_Y;
+  if (x > MAX_X) {
+    x = ORIGIN_X;
+    y += STEP_Y + 1.5;
+  }
+  if (y > MAX_Y) {
+    const n = free.length;
+    x = Math.min(MAX_X, ORIGIN_X + (n % 6) * STEP_X);
+    y = Math.min(MAX_Y, ORIGIN_Y + Math.floor(n / 6) * STEP_Y);
+  }
+  return {
+    x: Math.min(94, Math.max(0, Math.round(x * 100) / 100)),
+    y: Math.min(92, Math.max(0, Math.round(y * 100) / 100))
+  };
+}
+
+function addSticky(atCenter) {
+  const id = "s" + Date.now();
+  // Prefer live cork toolbar selection (color, noteScale, font, fontSizePx);
+  // Lock defaults still persists stickyDefaults, but create uses what's on the toolbar now.
+  const d = readStickyToolbarState();
+  const pos = nextStickySpawnPos();
+  // Always assign the absolute highest z so new stickies spawn on top (fix spawn-behind)
+  const maxZ = stickies.reduce((m, s) => Math.max(m, typeof s.z === "number" ? s.z : 0), zCounter);
+  zCounter = maxZ + 1;
+  stickies.push({
+    id, text: "",
+    color: d.color || "yellow",
+    font: d.font || "patrick",
+    fontSizePx: resolveFontSizePx(d),
+    noteScale: resolveNoteScale(d),
+    x: pos.x,
+    y: pos.y,
+    z: zCounter,
+    attachedTo: null,
+    folderId: null
+  });
+  // Drag-first create: select only — do NOT enter text editing / autofocus
+  selectedStickyIds.clear();
+  selectedStickyIds.add(id);
+  editingStickyId = null;
+  save();
+  render();
+  // After paint, run peel + bulb; force inline z again in case CSS race
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const el = document.querySelector('[data-sticky="' + id + '"]');
+      if (el) el.style.zIndex = String(zCounter);
+      showStickyCreateEffect(id);
+    });
+  });
+}
+
+document.getElementById("startTimerBtn").addEventListener("click", startTimer);
+document.getElementById("stopTimerBtn").addEventListener("click", stopTimer);
+document.getElementById("addProjectBtn").addEventListener("click", () => addProject());
+document.getElementById("newStickyBtn").addEventListener("click", () => addSticky(true));
+document.getElementById("newFolderBtn").addEventListener("click", () => addFolder());
+document.getElementById("folderPopoverClose").addEventListener("click", (e) => {
+  e.stopPropagation();
+  closeFolderPopover();
+  renderStickies();
+  bindStickyInteractions();
+});
+document.getElementById("folderSpreadBtn").addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (!openFolderId) return;
+  spreadFolderStickies(openFolderId);
+});
+document.addEventListener("pointerdown", (e) => {
+  if (!openFolderId) return;
+  const pop = document.getElementById("folderPopover");
+  if (!pop || pop.hidden) return;
+  if (pop.contains(e.target)) return;
+  if (e.target.closest && e.target.closest('[data-folder="' + openFolderId + '"]')) return;
+  closeFolderPopover();
+  document.querySelectorAll(".cork-folder.open").forEach((el) => el.classList.remove("open", "opening"));
+}, true);
+document.getElementById("undoTrashBtn").addEventListener("click", undoTrash);
+
+(function bindStickyToolbar() {
+  if (window.__stickyToolbarBound) return;
+  window.__stickyToolbarBound = true;
+  const fontSel = document.getElementById("stickyFontSelect");
+  if (fontSel) {
+    fontSel.addEventListener("change", () => {
+      if (!STICKY_FONTS.includes(fontSel.value)) return;
+      applyStickyStylePatch({ font: fontSel.value });
+    });
+    // Apply on first pointer interaction when already open isn't needed; change is enough.
+  }
+  const fontSlider = document.getElementById("stickyFontSizeSlider");
+  if (fontSlider) {
+    const onFontLive = () => {
+      const val = clampNum(fontSlider.value, STICKY_FONT_PX_MIN, STICKY_FONT_PX_MAX, 15);
+      applyStickyStylePatch({ fontSizePx: val }, { live: true });
+    };
+    const onFontCommit = () => {
+      const val = clampNum(fontSlider.value, STICKY_FONT_PX_MIN, STICKY_FONT_PX_MAX, 15);
+      applyStickyStylePatch({ fontSizePx: val });
+    };
+    fontSlider.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      try { fontSlider.focus({ preventScroll: true }); } catch (err) { try { fontSlider.focus(); } catch (e2) {} }
+      // Apply on first press so click-to-position / thumb grab updates before input races focus
+      requestAnimationFrame(onFontLive);
+    });
+    fontSlider.addEventListener("input", onFontLive);
+    fontSlider.addEventListener("change", onFontCommit);
+  }
+  const noteSlider = document.getElementById("stickyNoteScaleSlider");
+  if (noteSlider) {
+    const onNoteLive = () => {
+      const val = clampNum(noteSlider.value, STICKY_NOTE_SCALE_MIN, STICKY_NOTE_SCALE_MAX, 1);
+      applyStickyStylePatch({ noteScale: Math.round(val * 100) / 100 }, { live: true });
+    };
+    const onNoteCommit = () => {
+      const val = clampNum(noteSlider.value, STICKY_NOTE_SCALE_MIN, STICKY_NOTE_SCALE_MAX, 1);
+      applyStickyStylePatch({ noteScale: Math.round(val * 100) / 100 });
+    };
+    noteSlider.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      try { noteSlider.focus({ preventScroll: true }); } catch (err) { try { noteSlider.focus(); } catch (e2) {} }
+      requestAnimationFrame(onNoteLive);
+    });
+    noteSlider.addEventListener("input", onNoteLive);
+    noteSlider.addEventListener("change", onNoteCommit);
+  }
+  document.querySelectorAll(".cork-toolbar .swatch").forEach((btn) => {
+    const applyColor = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const color = btn.getAttribute("data-color");
+      if (!STICKY_COLORS.includes(color)) return;
+      applyStickyStylePatch({ color: color });
+    };
+    // pointerdown so first press applies (no focus/click delay)
+    btn.addEventListener("pointerdown", applyColor);
+    btn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+  });
+  if (fontSel) {
+    fontSel.addEventListener("pointerdown", (e) => e.stopPropagation());
+  }
+  const lockBtn = document.getElementById("lockDefaultsBtn");
+  if (lockBtn) {
+    lockBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      lockStickyDefaults();
+    });
+  }
+})();
+document.querySelectorAll(".side-tabs button").forEach((btn) => {
+  btn.addEventListener("click", () => { prefs.sideTab = btn.getAttribute("data-side"); save(); renderSideTabs(); });
+});
+document.querySelectorAll("#densitySeg button").forEach((btn) => {
+  btn.addEventListener("click", () => { prefs.density = btn.getAttribute("data-density"); save(); applyPrefsUI(); });
+});
+document.getElementById("toggleDoneBtn").addEventListener("click", () => {
+  prefs.showDone = !prefs.showDone; save(); render();
+});
+document.querySelectorAll(".filter-chip").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const f = btn.getAttribute("data-filter");
+    prefs.filter = prefs.filter === f ? null : f; save(); render();
+  });
+});
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(currentState(), null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "active-projects-board-v14.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || ""));
+      const state = migrateFromParsed(parsed);
+      if (!state || !state.projects) { alert("Could not read that JSON as a board backup."); return; }
+      if (!confirm("Replace current board with imported data? Projects + stickies + prefs will be overwritten from the file.")) return;
+      applyState(state); selectOnlyProject(null); save(); render();
+    } catch (err) { alert("Import failed: " + err.message); }
+  };
+  reader.readAsText(file);
+});
+document.getElementById("deleteBtn").addEventListener("click", () => {
+  if (!selectedId) return;
+  if (!confirm("Delete this card?")) return;
+  const ids = cardIdsForMove(selectedId);
+  const lanes = new Set();
+  ids.forEach((id) => {
+    const card = cards.find((c) => c.id === id);
+    if (card) lanes.add(card.lane);
+    stickies.forEach((s) => { if (s.attachedTo === id) s.attachedTo = null; });
+  });
+  const idSet = new Set(ids);
+  cards = cards.filter((c) => !idSet.has(c.id));
+  lanes.forEach((lane) => reindexLane(lane));
+  selectOnlyProject(null); save(); render();
+});
+document.getElementById("archiveBtn").addEventListener("click", () => {
+  if (!selectedId) return;
+  archiveCard(selectedId); prefs.sideTab = "archive"; save(); render();
+});
+document.getElementById("archiveAllDoneBtn").addEventListener("click", () => {
+  const done = cards.filter((c) => c.lane === "done");
+  if (!done.length) { alert("No Done projects to archive."); return; }
+  if (!confirm("Archive all " + done.length + " Done project(s)?")) return;
+  done.forEach((c) => archiveCard(c.id));
+});
+document.getElementById("doneBtn").addEventListener("click", () => { selectOnlyProject(null); render(); });
+document.getElementById("moveUpBtn").addEventListener("click", () => { if (selectedId) moveInLane(selectedId, -1); });
+document.getElementById("moveDownBtn").addEventListener("click", () => { if (selectedId) moveInLane(selectedId, 1); });
+document.getElementById("pushBtn").addEventListener("click", () => { if (selectedId) pushCard(selectedId, 1); });
+document.getElementById("clearTodayBtn").addEventListener("click", () => {
+  cards.forEach((c) => { c.today = false; }); save(); render();
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (!confirm("Clear all projects on this board? Stickies, folders, and archive are kept.")) return;
+  cards = normalize(cloneDefaults()); selectOnlyProject(null); save(); render();
+});
+
+
+/* ===== Custom context menus ===== */
+function hideContextMenu() {
+  const menu = document.getElementById("ctxMenu");
+  if (!menu) return;
+  menu.hidden = true;
+  menu.innerHTML = "";
+  menu.onclick = null;
+}
+function placeContextMenu(menu, x, y) {
+  menu.hidden = false;
+  menu.style.left = "0px";
+  menu.style.top = "0px";
+  const rect = menu.getBoundingClientRect();
+  const pad = 6;
+  let left = x;
+  let top = y;
+  if (left + rect.width > window.innerWidth - pad) left = Math.max(pad, window.innerWidth - rect.width - pad);
+  if (top + rect.height > window.innerHeight - pad) top = Math.max(pad, window.innerHeight - rect.height - pad);
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+}
+function ctxItem(label, action, opts) {
+  opts = opts || {};
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ctx-item" + (opts.danger ? " danger" : "") + (opts.active ? " active" : "");
+  btn.setAttribute("role", "menuitem");
+  const left = document.createElement("span");
+  left.textContent = (opts.active ? "✓ " : "") + label;
+  btn.appendChild(left);
+  if (opts.hint) {
+    const h = document.createElement("span");
+    h.className = "hint";
+    h.textContent = opts.hint;
+    btn.appendChild(h);
+  }
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideContextMenu();
+    action();
+  });
+  return btn;
+}
+function ctxSep(menu) {
+  const d = document.createElement("div");
+  d.className = "ctx-sep";
+  menu.appendChild(d);
+}
+function ctxLabel(menu, text) {
+  const d = document.createElement("div");
+  d.className = "ctx-label";
+  d.textContent = text;
+  menu.appendChild(d);
+}
+
+function showStickyContextMenu(x, y, stickyId) {
+  const s = stickies.find((n) => n.id === stickyId);
+  if (!s || s.attachedTo) return;
+  const menu = document.getElementById("ctxMenu");
+  if (!menu) return;
+  hideContextMenu();
+  const ids = (selectedStickyIds.has(stickyId) && selectedStickyIds.size > 1)
+    ? Array.from(selectedStickyIds)
+    : [stickyId];
+  const applyPatch = (patch) => {
+    ids.forEach((id) => {
+      const note = stickies.find((n) => n.id === id);
+      if (note && !note.attachedTo) Object.assign(note, patch);
+    });
+    save(); renderStickies(); bindStickyInteractions(); syncStickyToolbar();
+  };
+  const title = ids.length > 1 ? ("Sticky ×" + ids.length) : "Sticky note";
+  ctxLabel(menu, title);
+
+  menu.appendChild(ctxItem("Edit text", () => {
+    selectSticky(stickyId, "replace");
+    editingStickyId = stickyId;
+    renderStickies(); bindStickyInteractions();
+    const ta = document.querySelector('[data-sticky-edit="' + stickyId + '"]');
+    if (ta) requestAnimationFrame(() => { ta.focus(); try { ta.select(); } catch (err) {} });
+  }, { hint: "Double-click" }));
+
+  ctxSep(menu);
+  ctxLabel(menu, "Color");
+  const sw = document.createElement("div");
+  sw.className = "ctx-swatches";
+  STICKY_COLORS.forEach((color) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ctx-swatch " + color + (s.color === color ? " selected" : "");
+    b.title = color;
+    b.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      hideContextMenu();
+      applyPatch({ color: color });
+    });
+    sw.appendChild(b);
+  });
+  menu.appendChild(sw);
+
+  ctxLabel(menu, "Font");
+  const fonts = document.createElement("div");
+  fonts.className = "ctx-pills";
+  STICKY_FONTS.forEach((f) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ctx-pill" + (s.font === f ? " active" : "");
+    b.textContent = STICKY_FONT_LABELS[f] || f;
+    b.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      hideContextMenu();
+      applyPatch({ font: f });
+    });
+    fonts.appendChild(b);
+  });
+  menu.appendChild(fonts);
+
+  ctxSep(menu);
+  menu.appendChild(ctxItem("Bring to front", () => {
+    ids.forEach((id) => {
+      const note = stickies.find((n) => n.id === id);
+      if (note) bringStickyFront(note);
+    });
+    save(); renderStickies(); bindStickyInteractions();
+  }));
+  menu.appendChild(ctxItem(ids.length > 1 ? "Crumple selected" : "Crumple / trash", () => {
+    if (ids.length > 1) crumpleStickies(ids);
+    else crumpleAndTrash(stickyId);
+  }, { danger: true }));
+
+  placeContextMenu(menu, x, y);
+}
+
+function showProjectContextMenu(x, y, cardId) {
+  const c = cards.find((n) => n.id === cardId);
+  if (!c) return;
+  const menu = document.getElementById("ctxMenu");
+  if (!menu) return;
+  hideContextMenu();
+  const ids = (selectedIds.has(cardId) && selectedIds.size > 1)
+    ? Array.from(selectedIds).filter((id) => cards.some((x) => x.id === id))
+    : [cardId];
+  const primary = cards.find((n) => n.id === cardId) || c;
+  const multi = ids.length > 1;
+  ctxLabel(menu, multi ? ("Projects ×" + ids.length) : (primary.title || "Project"));
+
+  menu.appendChild(ctxItem("Open details", () => {
+    openProjectDetails(cardId); render();
+    const expand = document.getElementById("todayExpand");
+    if (expand && !expand.hidden) expand.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, { hint: "Double-click", active: detailsOpen && selectedId === cardId }));
+
+  if (detailsOpen && selectedId === cardId) {
+    menu.appendChild(ctxItem("Close details", () => { closeProjectDetails(); render(); }));
+  }
+
+  ctxSep(menu);
+  ctxLabel(menu, "Phase");
+  PHASES.forEach((phase) => {
+    menu.appendChild(ctxItem(phase.label, () => {
+      ids.forEach((id) => {
+        const card = cards.find((x) => x.id === id);
+        if (!card) return;
+        const prev = card.lane;
+        card.lane = phase.id;
+        if (prev !== phase.id) reindexLane(prev);
+      });
+      reindexLane(phase.id);
+      save(); render();
+    }, { active: !multi && primary.lane === phase.id }));
+  });
+
+  ctxSep(menu);
+  ctxLabel(menu, "Priority");
+  [1, 2, 3].forEach((p) => {
+    const labels = { 1: "P1 · Focus", 2: "P2 · Soon", 3: "P3 · Later" };
+    menu.appendChild(ctxItem(labels[p], () => {
+      ids.forEach((id) => {
+        const card = cards.find((x) => x.id === id);
+        if (card) card.priority = p;
+      });
+      save(); render();
+    }, { active: !multi && primary.priority === p }));
+  });
+
+  ctxSep(menu);
+  const onToday = multi ? ids.every((id) => {
+    const card = cards.find((x) => x.id === id);
+    return card && card.today;
+  }) : primary.today;
+  menu.appendChild(ctxItem(onToday ? "Remove from Today" : "Add to Today", () => {
+    ids.forEach((id) => {
+      const card = cards.find((x) => x.id === id);
+      if (card) card.today = !onToday;
+    });
+    if (ids[0]) selectOnlyProject(ids[0]);
+    save(); render();
+  }));
+
+  menu.appendChild(ctxItem(multi ? "Archive selected" : "Archive", () => {
+    ids.slice().forEach((id) => {
+      const card = cards.find((x) => x.id === id);
+      if (!card) return;
+      const lane = card.lane;
+      cards = cards.filter((x) => x.id !== id);
+      stickies.forEach((s) => { if (s.attachedTo === id) s.attachedTo = null; });
+      archived.unshift(Object.assign({}, card, { archivedAt: new Date().toISOString(), lane: "done" }));
+      if (selectedId === id) { selectedId = null; detailsOpen = false; }
+      selectedIds.delete(id);
+      reindexLane(lane);
+    });
+    if (!selectedIds.size) detailsOpen = false;
+    prefs.sideTab = "archive";
+    save(); render();
+  }, { danger: true }));
+
+  placeContextMenu(menu, x, y);
+}
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("ctxMenu");
+  if (!menu || menu.hidden) return;
+  if (menu.contains(e.target)) return;
+  hideContextMenu();
+}, true);
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") hideContextMenu();
+});
+document.addEventListener("scroll", hideContextMenu, true);
+window.addEventListener("resize", () => {
+  hideContextMenu();
+  repositionAllStickies();
+  positionTrashCan();
+});
+
+bindTodayDrop();
+applyState(load());
+save();
+render();
+if (migrateStickyCoordsToCork()) { save(); renderStickies(); bindStickyInteractions(); }
+</script>
+  <div id="ctxMenu" class="ctx-menu" hidden role="menu"></div>
+</body>
+</html>
