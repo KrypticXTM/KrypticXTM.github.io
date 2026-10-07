@@ -1,9 +1,14 @@
 <!DOCTYPE html>
+<!--
+  Active Projects — Copyright Tim Murray 2026.
+  Personal, non-commercial use is free. You may not resell, sublicense,
+  or redistribute this file for a fee.
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Active Projects — Tim</title>
+<title>Active Projects</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@500;600&family=Patrick+Hand&family=Permanent+Marker&display=swap" rel="stylesheet" />
@@ -26,7 +31,7 @@
     color: var(--ink); min-height: 100vh;
   }
   #boardRoot { position: relative; min-height: 100vh; padding: 10px 12px 48px; }
-  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; position:relative; z-index:5; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; position:relative; z-index:80; overflow:visible; }
   h1 { margin:0; font-size:17px; letter-spacing:-0.03em; }
   .sub { color:var(--muted); font-size:11px; margin-top:2px; }
   .actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
@@ -42,9 +47,11 @@
   .seg button { border:none; border-radius:0; cursor:pointer; color:#c5ccd8; }
   .seg button + button { border-left:1px solid var(--line); }
   .filters { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
-  .quick-wrap { position:relative; display:inline-flex; }
+  .quick-wrap { position:relative; display:inline-flex; overflow:visible; }
+  .actions { overflow:visible; }
   .quick-menu {
-    position:absolute; top:calc(100% + 4px); right:0; z-index:40;
+    /* Above cork-head (z=60) / cork wood frame. Header stacking context is z=80. */
+    position:absolute; top:calc(100% + 4px); right:0; z-index:100;
     background:#1a2030; border:1px solid #3a4560; border-radius:10px; padding:4px; min-width:140px;
     box-shadow:0 8px 24px #0008;
   }
@@ -398,6 +405,10 @@
   .sticky-pin.orange { background:#fed7aa; color:#9a3412; }
   .sticky-pin.purple { background:#e9d5ff; color:#581c87; }
   .sticky-pin.mint { background:#a7f3d0; color:#065f46; }
+  .sticky-pin.rose { background:#fecdd3; color:#9f1239; }
+  .sticky-pin.peach { background:#ffd8be; color:#9a3412; }
+  .sticky-pin.lilac { background:#ddd6fe; color:#5b21b6; }
+  .sticky-pin.slate { background:#64748b; color:#f8fafc; }
   .timer-box { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:6px; }
   .timer-box input[type="number"] { width:64px; }
   .timer-readout { font-variant-numeric:tabular-nums; font-size:12px; color:#e8ecf4; min-width:48px; }
@@ -440,8 +451,10 @@
   .today { position:relative; z-index:3; }
   .layout { position:relative; z-index:3; }
   .cork-section {
-    /* z-index auto so .cork-head can stack above #stickyLayer (40) and keep sliders clickable */
+    /* z-index auto + no transform/filter/isolation: cork-head (60) and cork-stage (1) must
+       compete separately with #stickyLayer (40). Isolating this section traps the toolbar under stickies. */
     position:relative; z-index:auto; margin-bottom:12px;
+    isolation:auto; transform:none; filter:none;
     border-radius:10px; overflow:visible; padding:11px;
     /* Solid professional dark wood-brown frame around the whole board */
     background:
@@ -463,8 +476,11 @@
     border-bottom:none;
     border-radius:5px 5px 0 0;
     box-shadow:inset 0 1px 0 rgba(232,213,184,.1);
-    /* Above #stickyLayer so post-it size/font sliders stay clickable when notes sit high/large */
-    position:relative; z-index:50;
+    /* Must compete with #stickyLayer (40) in boardRoot — cork-section must NOT create a stacking
+       context (no transform/filter/isolation/opacity<1) or head is trapped under stickies. */
+    position:relative; z-index:60;
+    pointer-events:auto;
+    isolation:isolate;
   }
   .cork-toolbar {
     display:flex; gap:6px; flex-wrap:wrap; align-items:center; justify-content:flex-start;
@@ -514,7 +530,10 @@
   .cork-toolbar .sticky-slider input[type="range"]::-moz-range-track {
     height:4px; background:#3a2818; border-radius:999px; border:none;
   }
-  .cork-toolbar .swatch { width:20px; height:20px; border-radius:5px; border:1px solid #0004; cursor:pointer; padding:0; }
+  .cork-toolbar .swatch {
+    width:22px; height:22px; border-radius:5px; border:1px solid #0004; cursor:pointer; padding:0;
+    position:relative; z-index:1; flex:0 0 auto; touch-action:manipulation;
+  }
   .cork-toolbar .swatch.yellow { background:#fde68a; }
   .cork-toolbar .swatch.pink { background:#fbcfe8; }
   .cork-toolbar .swatch.blue { background:#bfdbfe; }
@@ -522,8 +541,15 @@
   .cork-toolbar .swatch.orange { background:#fed7aa; }
   .cork-toolbar .swatch.purple { background:#e9d5ff; }
   .cork-toolbar .swatch.mint { background:#a7f3d0; }
+  .cork-toolbar .swatch.rose { background:#fecdd3; }
+  .cork-toolbar .swatch.peach { background:#ffd8be; }
+  .cork-toolbar .swatch.lilac { background:#ddd6fe; }
+  .cork-toolbar .swatch.slate { background:#64748b; }
   .cork-toolbar .swatch.selected { outline:2px solid #fff; outline-offset:1px; }
-  .cork-toolbar .tool { height:26px; padding:0 10px; font-size:11px; }
+  .cork-toolbar .tool {
+    height:26px; padding:0 10px; font-size:11px;
+    position:relative; z-index:1; touch-action:manipulation;
+  }
   .cork-stage {
     position:relative; min-height:var(--cork-h); height:var(--cork-h);
     border-radius:0 0 5px 5px; overflow:visible;
@@ -720,6 +746,10 @@
   #folderPopover .fp-sticky.orange { background:#fed7aa; }
   #folderPopover .fp-sticky.purple { background:#e9d5ff; }
   #folderPopover .fp-sticky.mint { background:#a7f3d0; }
+  #folderPopover .fp-sticky.rose { background:#fecdd3; }
+  #folderPopover .fp-sticky.peach { background:#ffd8be; }
+  #folderPopover .fp-sticky.lilac { background:#ddd6fe; }
+  #folderPopover .fp-sticky.slate { background:#64748b; color:#f8fafc; }
   #folderPopover .fp-sticky.dragging-out { opacity:0.55; }
   #folderPopover .fp-hint { font:500 10px/1.3 "Segoe UI", system-ui, sans-serif; color:#a89870; }
   #folderPopover .fp-actions { display:flex; gap:6px; flex-wrap:wrap; }
@@ -770,6 +800,13 @@
   .sticky.orange { background:#fed7aa; }
   .sticky.purple { background:#e9d5ff; }
   .sticky.mint { background:#a7f3d0; }
+  .sticky.rose { background:#fecdd3; }
+  .sticky.peach { background:#ffd8be; }
+  .sticky.lilac { background:#ddd6fe; }
+  .sticky.slate { background:#64748b; color:#f8fafc; }
+  .sticky.slate textarea { color:#f8fafc; }
+  .sticky.slate .sticky-del { color:#fff9; }
+  .sticky.slate .sticky-del:hover { background:#fff2; color:#fff; }
   .sticky.dragging { opacity:0.92; cursor:grabbing; box-shadow:6px 12px 22px #000a; }
   .sticky.crumpling {
     animation: crumple .62s cubic-bezier(.45,.05,.55,.95) forwards;
@@ -892,8 +929,11 @@
   }
   /* Peel-on: realistic top-right curl (ref: smooth fold + adhesive + soft under-curl shadow) */
   .sticky.sticky-peeling-on {
-    /* Keep below .cork-head (50) so peel flight cannot block size/font sliders */
-    z-index:45 !important;
+    /* Highest within #stickyLayer so new notes peel ON TOP of existing stickies.
+       stickyLayer (boardRoot z=40) stays below .cork-head (60) — internal z never covers the toolbar.
+       pe:none so the upward peel flight cannot steal toolbar / + Sticky hits mid-animation. */
+    z-index:100000 !important;
+    pointer-events:none !important;
     animation: stickyPeelOn 1.15s cubic-bezier(.22,.75,.28,1) both;
     will-change: transform, opacity, filter;
     overflow:visible;
@@ -1017,6 +1057,20 @@
     45%  { opacity:0.7; transform:scale(1.02); }
     100% { opacity:0; transform:scale(0.7); }
   }
+  .sticky-resize {
+    position:absolute; right:0; bottom:0; width:16px; height:16px;
+    cursor:nwse-resize; z-index:5; touch-action:none;
+    background:
+      linear-gradient(135deg, transparent 55%, #0003 55%, #0003 62%, transparent 62%),
+      linear-gradient(135deg, transparent 70%, #0004 70%, #0004 78%, transparent 78%),
+      linear-gradient(135deg, transparent 85%, #0005 85%);
+    border-radius:0 0 2px 0;
+    opacity:0; transition:opacity .12s;
+  }
+  .sticky:hover .sticky-resize,
+  .sticky.selected-sticky .sticky-resize,
+  .sticky.resizing .sticky-resize { opacity:0.9; }
+  .sticky.resizing { cursor:nwse-resize; user-select:none; }
   .sticky.editing-sticky { cursor:text; user-select:text; }
   .sticky.pending-drag { cursor:grabbing; }
   .archive-list { display:flex; flex-direction:column; gap:5px; }
@@ -1066,6 +1120,10 @@
   .ctx-menu .ctx-swatch.orange { background:#fed7aa; }
   .ctx-menu .ctx-swatch.purple { background:#e9d5ff; }
   .ctx-menu .ctx-swatch.mint { background:#a7f3d0; }
+  .ctx-menu .ctx-swatch.rose { background:#fecdd3; }
+  .ctx-menu .ctx-swatch.peach { background:#ffd8be; }
+  .ctx-menu .ctx-swatch.lilac { background:#ddd6fe; }
+  .ctx-menu .ctx-swatch.slate { background:#64748b; }
   .ctx-menu .ctx-pills { display:flex; flex-wrap:wrap; gap:4px; padding:2px 10px 8px; }
   .ctx-menu .ctx-pill {
     background:#222836; border:1px solid #3a4560; color:#c5ccd8; border-radius:999px;
@@ -1078,6 +1136,76 @@
   .accent-animation { --accent:#f472b6; } .accent-build { --accent:#34d399; }
   .accent-writing { --accent:#fb7185; } .accent-website { --accent:#22d3ee; }
   .accent-idea { --accent:#fbbf24; } .accent-other { --accent:#94a3b8; }
+
+  /* Help / How-to tutorial modal */
+  #helpOverlay {
+    position:fixed; inset:0; z-index:20000;
+    background:#0b0d12cc; backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    padding:16px;
+  }
+  #helpOverlay[hidden] { display:none !important; }
+  #helpModal {
+    width:min(440px, 96vw); max-height:min(560px, 90vh);
+    background:linear-gradient(180deg,#1e2638,#151a28);
+    border:1px solid #4b5872; border-radius:14px;
+    box-shadow:0 20px 48px #000c, 0 0 0 1px #ffffff0a;
+    display:flex; flex-direction:column; overflow:hidden;
+    color:#e8ecf4;
+  }
+  #helpModal .help-head {
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:12px 14px 8px; border-bottom:1px solid #2a3140;
+  }
+  #helpModal .help-head h2 {
+    margin:0; font-size:15px; letter-spacing:-0.02em; font-weight:700;
+  }
+  #helpModal .help-close {
+    border:none; background:#222836; color:#c5ccd8; border-radius:8px;
+    width:28px; height:28px; cursor:pointer; font-size:16px; line-height:1;
+  }
+  #helpModal .help-close:hover { background:#2a3346; color:#fff; }
+  #helpModal .help-body {
+    padding:14px 16px 8px; overflow:auto; flex:1; min-height:0;
+  }
+  #helpModal .help-page[hidden] { display:none !important; }
+  #helpModal .help-page h3 {
+    margin:0 0 8px; font-size:14px; color:#fcd34d; font-weight:750;
+  }
+  #helpModal .help-page p, #helpModal .help-page li {
+    margin:0 0 8px; font-size:13px; line-height:1.45; color:#c5ccd8;
+  }
+  #helpModal .help-page ul { margin:0 0 4px; padding-left:18px; }
+  #helpModal .help-page li { margin-bottom:6px; }
+  #helpModal .help-page strong { color:#e8ecf4; font-weight:650; }
+  #helpModal .help-dots {
+    display:flex; gap:6px; justify-content:center; padding:4px 0 2px;
+  }
+  #helpModal .help-dot {
+    width:7px; height:7px; border-radius:50%; background:#3a4560; border:none; padding:0; cursor:pointer;
+  }
+  #helpModal .help-dot.active { background:#fbbf24; }
+  #helpModal .help-foot {
+    display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;
+    padding:10px 14px 12px; border-top:1px solid #2a3140;
+  }
+  #helpModal .help-nav { display:flex; gap:6px; align-items:center; }
+  #helpModal .help-skip {
+    display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#8b94a7; cursor:pointer; user-select:none;
+  }
+  #helpModal .help-skip input { accent-color:#6d5efc; }
+  #helpBtn.tool {
+    background: linear-gradient(180deg, #f59e0b, #d97706);
+    border: 1px solid #b45309;
+    color: #1a1205;
+    font-weight: 650;
+  }
+  #helpBtn.tool:hover {
+    background: linear-gradient(180deg, #fbbf24, #f59e0b);
+    border-color: #fbbf24;
+    color: #1a1205;
+  }
+
   #importFile { display:none; }
   @media (max-width:1100px) {
     .layout { grid-template-columns:1fr; }
@@ -1091,6 +1219,7 @@
   <header>
     <div>
       <h1>Active Projects</h1>
+      <div class="sub">Active Projects · personal use · not for resale</div>
     </div>
     <div class="actions">
       <div class="pill" id="updated">Local board</div>
@@ -1104,11 +1233,12 @@
         <button type="button" data-density="compact" class="active">Compact</button>
       </div>
       <button class="tool" id="toggleDoneBtn" type="button">Show Done</button>
+      <button class="tool" id="helpBtn" type="button" title="How it works" aria-label="How it works">How it works</button>
       <button class="tool" id="exportBtn" type="button">Export</button>
       <button class="tool" id="importBtn" type="button">Import</button>
       <input type="file" id="importFile" accept="application/json,.json" />
       <button class="tool" id="clearTodayBtn" type="button">Clear Today</button>
-      <button class="tool" id="resetBtn" type="button">Reset defaults</button>
+      <button class="tool" id="resetBtn" type="button" title="Clear all projects. Stickies, folders, and archive are kept." aria-label="Clear projects">Clear projects</button>
       <div class="quick-wrap">
         <button class="tool primary" id="quickAddBtn" type="button">+</button>
         <div class="quick-menu" id="quickMenu" hidden>
@@ -1146,6 +1276,10 @@
         <button type="button" class="swatch orange" data-color="orange" title="Orange"></button>
         <button type="button" class="swatch purple" data-color="purple" title="Purple"></button>
         <button type="button" class="swatch mint" data-color="mint" title="Mint"></button>
+        <button type="button" class="swatch rose" data-color="rose" title="Rose"></button>
+        <button type="button" class="swatch peach" data-color="peach" title="Peach"></button>
+        <button type="button" class="swatch lilac" data-color="lilac" title="Lilac"></button>
+        <button type="button" class="swatch slate" data-color="slate" title="Slate"></button>
         <button class="tool primary" type="button" id="newStickyBtn">+ Sticky</button>
         <button class="tool" type="button" id="newFolderBtn" title="Add a folder on the cork">+ Folder</button>
       </div>
@@ -1198,7 +1332,7 @@
                 <option value="music">Music</option>
                 <option value="product">Product</option>
                 <option value="animation">Animation</option>
-                <option value="build">Grok Build</option>
+                <option value="build">Build</option>
                 <option value="writing">Writing</option>
                 <option value="website">Website</option>
                 <option value="idea">Idea</option>
@@ -1231,16 +1365,12 @@
             </div>
           </div>
           <label>Location / app</label>
-          <input id="fLocation" list="locList" placeholder="Website bot, Grok Build…" />
+          <input id="fLocation" list="locList" placeholder="App, folder, or link" />
           <datalist id="locList">
-            <option value="Idea Bot chat"></option>
-            <option value="Suno"></option>
-            <option value="Grok Build"></option>
-            <option value="Grok (writing)"></option>
-            <option value="Animation bot"></option>
-            <option value="Website bot"></option>
-            <option value="Desktop / local"></option>
-            <option value="Workflow Dashboard"></option>
+            <option value="Desktop"></option>
+            <option value="Browser"></option>
+            <option value="Docs"></option>
+            <option value="Notes"></option>
           </datalist>
           <label class="checkrow"><input type="checkbox" id="fToday" /> On Today focus</label>
           <label>Today bubble</label>
@@ -1326,6 +1456,70 @@
   <div class="fp-hint">Drag a sticky out to unfile · Spread fans all out · double-click folder to rename</div>
 </div>
 
+
+<div id="helpOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div id="helpModal">
+    <div class="help-head">
+      <h2 id="helpTitle">How it works</h2>
+      <button type="button" class="help-close" id="helpCloseBtn" title="Close" aria-label="Close">×</button>
+    </div>
+    <div class="help-body">
+      <div class="help-page" data-help-page="0">
+        <h3>Cork stickies</h3>
+        <ul>
+          <li>Hit <strong>+ Sticky</strong> on the cork toolbar to peel on a new note.</li>
+          <li>Pick a <strong>color swatch</strong> (and font/size) before or after you add one.</li>
+          <li><strong>Drag</strong> a sticky anywhere on the cork. Grab the <strong>bottom-right corner</strong> to resize.</li>
+          <li>Drag into the <strong>trash</strong> (or press Delete) to crumple it — you get a short Undo.</li>
+        </ul>
+      </div>
+      <div class="help-page" data-help-page="1" hidden>
+        <h3>Folders</h3>
+        <ul>
+          <li>Click <strong>+ Folder</strong> to drop a folder on the cork.</li>
+          <li><strong>Drop stickies onto a folder</strong> to file them inside.</li>
+          <li>Click a folder to <strong>open</strong> it. Use <strong>Spread onto cork</strong> to fan notes back out.</li>
+          <li>Double-click a folder to rename it. Drag a sticky out of the popover to unfile.</li>
+        </ul>
+      </div>
+      <div class="help-page" data-help-page="2" hidden>
+        <h3>Projects</h3>
+        <ul>
+          <li>Projects move through phases: <strong>Ideas → To Do → Doing → Review → Done</strong>.</li>
+          <li><strong>Drag tiles</strong> between columns (or reorder inside a column).</li>
+          <li>Mark something for <strong>Today</strong> — it shows up in the Today list up top.</li>
+          <li><strong>Double-click</strong> a tile (or Today row) to open details on the right.</li>
+        </ul>
+      </div>
+      <div class="help-page" data-help-page="3" hidden>
+        <h3>Pin a sticky onto a project</h3>
+        <ul>
+          <li>Drag a cork sticky onto a <strong>project tile</strong> — it pins as a little chip on that card.</li>
+          <li>You can also drop a sticky onto a <strong>Today</strong> row to pin it there.</li>
+          <li>Pinned chips stay with the project; free stickies stay on the cork.</li>
+        </ul>
+      </div>
+      <div class="help-page" data-help-page="4" hidden>
+        <h3>Export a backup</h3>
+        <ul>
+          <li>Click <strong>Export</strong> anytime — downloads a JSON backup of projects, stickies, folders, and prefs.</li>
+          <li>Use <strong>Import</strong> later to restore from that file (it will replace the current board after you confirm).</li>
+          <li>Your board also autosaves in this browser (local storage). Export is the safe off-machine copy.</li>
+        </ul>
+        <p>That’s it — close this anytime with <strong>Esc</strong>, the ×, or by clicking outside.</p>
+      </div>
+    </div>
+    <div class="help-dots" id="helpDots" aria-hidden="true"></div>
+    <div class="help-foot">
+      <label class="help-skip"><input type="checkbox" id="helpDontShow" /> Don’t show tips again</label>
+      <div class="help-nav">
+        <button type="button" class="tool" id="helpBackBtn">Back</button>
+        <button type="button" class="tool primary" id="helpNextBtn">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="trash-toast" id="trashToast" hidden>
   <span>Sticky crumpled.</span>
   <button type="button" id="undoTrashBtn">Undo</button>
@@ -1333,23 +1527,7 @@
 
 <script>
 
-const STORAGE_KEY = "tim-active-projects-board-v14";
-const OLD_KEYS = [
-  "tim-active-projects-board-v14",
-  "tim-active-projects-board-v13",
-  "tim-active-projects-board-v12",
-  "tim-active-projects-board-v11",
-  "tim-active-projects-board-v10",
-  "tim-active-projects-board-v9",
-  "tim-active-projects-board-v8",
-  "tim-active-projects-board-v7",
-  "tim-active-projects-board-v6",
-  "tim-active-projects-board-v5",
-  "tim-active-projects-board-v4",
-  "tim-active-projects-board-v3",
-  "tim-active-projects-board-v2",
-  "tim-active-projects-board-v1"
-];
+const STORAGE_KEY = "active-projects-board-v1";
 
 const PHASES = [
   { id: "ideas", label: "Ideas" },
@@ -1369,51 +1547,13 @@ const categoryIcon = {
   writing: "✎", website: "◎", idea: "·", other: "•"
 };
 
-const defaults = [
-  {
-    id: "song", lane: "doing", category: "music", title: "Alive and Unwell (+ set)",
-    status: "Drafting lyrics", location: "Idea Bot chat / Suno", priority: 2, today: false,
-    todayNote: "", deadline: "", timerMins: 25, bookmark: "", next: "Tighten Alive and Unwell, then Clever Lies and Called It Early",
-    notes: "2000s alt-metal. Metaphor verses, plain chorus. Four-verse draft in Idea Bot chat."
-  },
-  {
-    id: "dashboard", lane: "todo", category: "product", title: "Workflow Dashboard",
-    status: "Active", location: "Desktop / local", priority: 2, today: false, todayNote: "", deadline: "", timerMins: 25,
-    bookmark: "", next: "Add docs", notes: "Local WPF app. Docs still missing."
-  },
-  {
-    id: "anim", lane: "doing", category: "animation", title: "Character sheet",
-    status: "Continue", location: "Animation bot", priority: 2, today: false, todayNote: "", deadline: "", timerMins: 25,
-    bookmark: "", next: "Keep iterating the sheet", notes: "Animation.tm / character sheet work."
-  },
-  {
-    id: "lumina", lane: "todo", category: "build", title: "Lumina",
-    status: "In progress", location: "Grok Build", priority: 2, today: false, todayNote: "", deadline: "", timerMins: 25,
-    bookmark: "", next: "Finish the app", notes: ""
-  },
-  {
-    id: "word", lane: "todo", category: "build", title: "Word Lightning",
-    status: "In progress", location: "Grok Build", priority: 3, today: false, todayNote: "", deadline: "", timerMins: 25,
-    bookmark: "", next: "Finish the app", notes: ""
-  },
-  {
-    id: "onager", lane: "doing", category: "writing", title: "The Onager",
-    status: "Writing", location: "Grok (writing)", priority: 2, today: false, todayNote: "", deadline: "", timerMins: 25,
-    bookmark: "", next: "Continue drafting", notes: "Book draft in Grok."
-  },
-  {
-    id: "website", lane: "doing", category: "website", title: "Website",
-    status: "Active", location: "Website bot", priority: 1, today: false, todayNote: "", deadline: "", timerMins: 25,
-    bookmark: "", next: "Continue with Website Bot",
-    notes: "Website project tracked with Website Bot."
-  }
-];
+const defaults = [];
 
 let cards = [];
 let stickies = [];
 let folders = [];
 let archived = [];
-let prefs = { density: "compact", showDone: false, filter: null, sideTab: "edit", stickyColor: "yellow", stickyDefaults: null, stickyCoordSpace: "cork" };
+let prefs = { density: "compact", showDone: false, filter: null, sideTab: "edit", stickyColor: "yellow", stickyDefaults: null, stickyCoordSpace: "cork", helpSeen: false };
 let zCounter = 10;
 let recentlyTrashed = null;
 let trashUndoTimer = null;
@@ -1464,7 +1604,7 @@ function normalizeCard(c, i) {
 }
 function normalize(list) { return (list || []).map((c, i) => normalizeCard(c, i)); }
 
-const STICKY_COLORS = ["yellow", "pink", "blue", "green", "orange", "purple", "mint"];
+const STICKY_COLORS = ["yellow", "pink", "blue", "green", "orange", "purple", "mint", "rose", "peach", "lilac", "slate"];
 const STICKY_FONTS = ["patrick", "caveat", "marker", "architects", "sans"];
 const STICKY_FONT_PX = { s: 12, m: 15, l: 19 };
 const STICKY_NOTE_SCALE = { s: 0.8, m: 1, l: 1.28 };
@@ -1638,7 +1778,8 @@ function defaultPrefs() {
   return {
     density: "compact", showDone: false, filter: null, sideTab: "edit",
     stickyColor: stickyDefaults.color, stickyDefaults: stickyDefaults,
-    stickyCoordSpace: "cork"
+    stickyCoordSpace: "cork",
+    helpSeen: false
   };
 }
 function defaultState() {
@@ -1646,14 +1787,6 @@ function defaultState() {
 }
 
 function ensureSeedCards(list) {
-  const byId = new Map(list.map((c) => [c.id, c]));
-  defaults.forEach((seed) => {
-    if (!byId.has(seed.id)) {
-      list.push(Object.assign({}, seed, {
-        order: list.filter((c) => c.lane === mapLegacyLane(seed.lane)).length
-      }));
-    }
-  });
   return normalize(list);
 }
 
@@ -1700,16 +1833,12 @@ function migrateFromParsed(parsed) {
 
 function load() {
   try {
-    for (let i = 0; i < OLD_KEYS.length; i++) {
-      const raw = localStorage.getItem(OLD_KEYS[i]);
-      if (!raw) continue;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
       let parsed;
-      try { parsed = JSON.parse(raw); } catch (e) { continue; }
-      const state = migrateFromParsed(parsed);
-      if (state && state.projects && state.projects.length) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        return state;
-      }
+      try { parsed = JSON.parse(raw); } catch (e) { parsed = null; }
+      const state = parsed ? migrateFromParsed(parsed) : null;
+      if (state && Array.isArray(state.projects)) return state;
     }
   } catch (err) { console.error(err); }
   return defaultState();
@@ -2116,16 +2245,45 @@ function primarySelectedStickyId() {
   selectedStickyIds.forEach((id) => { last = id; });
   return last;
 }
-/** Draft toolbar styles when nothing is selected; stickyDefaults only change via Lock defaults. */
+/** Draft toolbar styles (font/size/scale) when nothing is selected; stickyDefaults only change via Lock defaults.
+ *  Create-color is separate: prefs.stickyColor only. Selection / cork / draft clear must never revert it. */
 let stickyToolbarDraft = null;
+
+/** Canonical create-color for + Sticky / toolbar swatch highlight. Not tied to draft or selection. */
+function getCreateStickyColor() {
+  if (STICKY_COLORS.includes(prefs.stickyColor)) return prefs.stickyColor;
+  if (prefs.stickyDefaults && STICKY_COLORS.includes(prefs.stickyDefaults.color)) return prefs.stickyDefaults.color;
+  const selSwatch = document.querySelector(".cork-toolbar .swatch.selected");
+  const dom = selSwatch && selSwatch.getAttribute("data-color");
+  if (STICKY_COLORS.includes(dom)) return dom;
+  return "yellow";
+}
+
+/** Persist create-color + keep defaults.color / optional draft.color in sync. Updates swatch highlight. */
+function setCreateStickyColor(color) {
+  if (!STICKY_COLORS.includes(color)) return;
+  // getStickyDefaults() prefers existing stickyDefaults.color over stickyColor — assign color AFTER.
+  const base = getStickyDefaults();
+  prefs.stickyDefaults = normalizeStickyDefaults(Object.assign({}, base, { color: color }), color);
+  prefs.stickyColor = color;
+  if (stickyToolbarDraft) {
+    stickyToolbarDraft = normalizeStickyDefaults(Object.assign({}, stickyToolbarDraft, { color: color }), color);
+  }
+  document.querySelectorAll(".cork-toolbar .swatch").forEach((btn) => {
+    btn.classList.toggle("selected", btn.getAttribute("data-color") === color);
+  });
+}
+
+/** Drop font/size draft without touching create-color (prefs.stickyColor). */
+function clearStickyToolbarDraft() {
+  stickyToolbarDraft = null;
+}
 
 function readStickyToolbarState() {
   const fontSel = document.getElementById("stickyFontSelect");
   const fontSlider = document.getElementById("stickyFontSizeSlider");
   const noteSlider = document.getElementById("stickyNoteScaleSlider");
-  let color = "yellow";
-  const selSwatch = document.querySelector(".cork-toolbar .swatch.selected");
-  if (selSwatch) color = selSwatch.getAttribute("data-color") || color;
+  const color = getCreateStickyColor();
   return normalizeStickyDefaults({
     font: fontSel ? fontSel.value : "patrick",
     fontSizePx: fontSlider ? Number(fontSlider.value) : 15,
@@ -2158,9 +2316,11 @@ function syncStickyToolbar() {
   if (fontSlider && document.activeElement !== fontSlider) fontSlider.value = String(fontPx);
   const noteSlider = document.getElementById("stickyNoteScaleSlider");
   if (noteSlider && document.activeElement !== noteSlider) noteSlider.value = String(noteSc);
-  const color = target.style.color || "yellow";
+  // Swatches always reflect create-color (prefs.stickyColor), never selected-note color or draft lifecycle.
+  // Context menu paints existing notes; toolbar swatch is for + Sticky.
+  const swatchColor = getCreateStickyColor();
   document.querySelectorAll(".cork-toolbar .swatch").forEach((btn) => {
-    btn.classList.toggle("selected", btn.getAttribute("data-color") === color);
+    btn.classList.toggle("selected", btn.getAttribute("data-color") === swatchColor);
   });
 }
 
@@ -2175,7 +2335,7 @@ function applyStickyStylePatch(patch, opts) {
     });
     // Keep selection stable across style applies
     selectedStickyIds = new Set(ids.filter((id) => stickies.some((s) => s.id === id && !s.attachedTo && !s.folderId)));
-    stickyToolbarDraft = null;
+    clearStickyToolbarDraft(); // font/size draft only — create-color stays in prefs.stickyColor
     if (opts.live) {
       // In-place update for sliders — no full rebind, and do NOT syncStickyToolbar
       // (writing input.value mid-drag cancels the first interaction in Chromium/Edge).
@@ -2211,7 +2371,7 @@ function lockStickyDefaults() {
   const locked = readStickyToolbarState();
   prefs.stickyDefaults = locked;
   prefs.stickyColor = locked.color;
-  stickyToolbarDraft = null;
+  clearStickyToolbarDraft();
   save();
   syncStickyToolbar();
   const btn = document.getElementById("lockDefaultsBtn");
@@ -2256,9 +2416,9 @@ function selectSticky(id, mode) {
     selectedStickyIds.clear();
     selectedStickyIds.add(id);
   }
-  /* Selecting a note: drop draft so toolbar mirrors that sticky immediately */
-  if (selectedStickyIds.size) stickyToolbarDraft = null;
-  else if (hadSelection) stickyToolbarDraft = null;
+  /* Selecting/deselecting a note: drop font/size draft so sliders mirror the note (or defaults).
+   * Never touch prefs.stickyColor — cork / focus / deselect must not revert create-color swatch. */
+  if (selectedStickyIds.size || hadSelection) clearStickyToolbarDraft();
   const primary = primarySelectedStickyId();
   if (primary) {
     const s = stickies.find((x) => x.id === primary);
@@ -2355,6 +2515,7 @@ function renderStickies() {
         '<div class="sticky-adhesive" aria-hidden="true"></div>' +
         '<div class="sticky-corner-hint" aria-hidden="true"></div>' +
         '<button type="button" class="sticky-del" data-sticky-del="' + s.id + '" title="Crumple and trash">×</button>' +
+        '<div class="sticky-resize" data-sticky-resize="' + s.id + '" title="Drag corner to resize" aria-hidden="true"></div>' +
         body +
       "</div>"
     );
@@ -2670,13 +2831,25 @@ function setStickyDropHighlight(target) {
 function endStickyDragFollow(el) {
   setStickyDropTargetsLive(false);
   if (!el) return;
-  el.classList.remove("drag-follow", "dragging", "pending-drag");
+  el.classList.remove("drag-follow", "dragging", "pending-drag", "resizing");
   const badge = el.querySelector(".multi-drag-badge");
   if (badge) badge.remove();
-  el.style.width = "";
-  el.style.height = "";
   el.style.transform = "";
   el.style.removeProperty("pointer-events"); // never leave drag hit-test pe:none stuck
+  // Restore noteScale size from model. Clearing width/height used to wipe inline
+  // stickySizeStyleAttr and snap notes back to CSS default 148×112 after drag.
+  const sid = el.getAttribute("data-sticky");
+  const s = sid ? stickies.find((x) => x.id === sid) : null;
+  if (s) {
+    const st = stickySizeInlineStyle(s);
+    el.style.width = st.width;
+    el.style.height = "";
+    el.style.minHeight = st.minHeight;
+    el.style.padding = st.padding;
+    if (st.fontSize) el.style.fontSize = st.fontSize;
+    if (st.lineHeight) el.style.lineHeight = st.lineHeight;
+    if (st["--sticky-ta-h"]) el.style.setProperty("--sticky-ta-h", st["--sticky-ta-h"]);
+  }
   // left/top restored by caller via positionStickyEl (cork% → layer px)
 }
 
@@ -3444,7 +3617,7 @@ function bindStickyInteractions() {
 
     el.addEventListener("pointerdown", (e) => {
       if (editingStickyId === id) return;
-      if (e.target.closest("[data-sticky-del], button, textarea")) return;
+      if (e.target.closest("[data-sticky-del], [data-sticky-resize], button, textarea")) return;
       if (e.button !== 0) return;
       // Second click of a dblclick — never start a drag; let dblclick enter edit.
       if (e.detail >= 2) {
@@ -3506,7 +3679,18 @@ function bindStickyInteractions() {
         el.classList.add("dragging", "drag-follow");
         // Inside cork: no tile/Today enlarge. Live drop targets only once pointer leaves cork.
         setStickyDropTargetsLive(!isPointerInsideCork(e.clientX, e.clientY));
-        if (startW) el.style.width = startW + "px";
+        // Lock width from stored noteScale (not measured rect) so drag never changes size
+        {
+          const sLock = stickies.find((x) => x.id === id);
+          if (sLock) {
+            const stLock = stickySizeInlineStyle(sLock);
+            el.style.width = stLock.width;
+            el.style.minHeight = stLock.minHeight;
+            el.style.height = "";
+          } else if (startW) {
+            el.style.width = startW + "px";
+          }
+        }
         const multiN = (selectedStickyIds.has(id) && selectedStickyIds.size > 1) ? selectedStickyIds.size : 0;
         if (multiN > 1 && !el.querySelector(".multi-drag-badge")) {
           const b = document.createElement("span");
@@ -3637,6 +3821,62 @@ function bindStickyInteractions() {
       setStickyDropTargetsLive(false);
       clearFolderDropHighlights();
     });
+
+    // Bottom-right corner resize (updates noteScale; does not start grab/drag)
+    const resizeHandle = el.querySelector("[data-sticky-resize]");
+    if (resizeHandle) {
+      let resizing = false, rzStartX = 0, rzStartY = 0, rzStartScale = 1;
+      resizeHandle.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const s = stickies.find((x) => x.id === id);
+        if (!s || s.attachedTo || s.folderId) return;
+        if (!selectedStickyIds.has(id) || selectedStickyIds.size <= 1) selectSticky(id, "replace");
+        else {
+          bringStickyFront(s);
+          el.style.zIndex = String(s.z);
+        }
+        resizing = true;
+        rzStartX = e.clientX;
+        rzStartY = e.clientY;
+        rzStartScale = resolveNoteScale(s);
+        el.classList.add("resizing");
+        dragStickyId = null;
+        try { resizeHandle.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      resizeHandle.addEventListener("pointermove", (e) => {
+        if (!resizing) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const s = stickies.find((x) => x.id === id);
+        if (!s) return;
+        const dx = e.clientX - rzStartX;
+        const dy = e.clientY - rzStartY;
+        const delta = (dx + dy) / 2;
+        const next = clampNum(rzStartScale + delta / STICKY_BASE_W, STICKY_NOTE_SCALE_MIN, STICKY_NOTE_SCALE_MAX, 1);
+        s.noteScale = Math.round(next * 100) / 100;
+        const st = stickySizeInlineStyle(s);
+        el.style.width = st.width;
+        el.style.minHeight = st.minHeight;
+        el.style.padding = st.padding;
+        el.style.fontSize = st.fontSize;
+        el.style.lineHeight = st.lineHeight;
+        el.style.setProperty("--sticky-ta-h", st["--sticky-ta-h"]);
+        const noteSlider = document.getElementById("stickyNoteScaleSlider");
+        if (noteSlider && document.activeElement !== noteSlider) noteSlider.value = String(s.noteScale);
+      });
+      const endResize = (e) => {
+        if (!resizing) return;
+        resizing = false;
+        el.classList.remove("resizing");
+        try { resizeHandle.releasePointerCapture(e.pointerId); } catch (err) {}
+        save();
+        syncStickyToolbar();
+      };
+      resizeHandle.addEventListener("pointerup", endResize);
+      resizeHandle.addEventListener("pointercancel", endResize);
+    }
   });
 
   document.querySelectorAll("[data-sticky-edit]").forEach((ta) => {
@@ -3769,6 +4009,7 @@ function bindStickyInteractions() {
       || (corkSection && e.target === corkSection);
     if (!onCork) return;
     selectedStickyIds.clear();
+    // Deselect only — do not clear create-color (prefs.stickyColor) or fight the swatch highlight.
     syncStickyToolbar();
     syncStickySelectionClass();
   };
@@ -3778,6 +4019,7 @@ function bindStickyInteractions() {
       if (editingStickyId) return;
       if (!selectedStickyIds.size) return;
       selectedStickyIds.clear();
+      // Escape deselect must not revert create-color swatch
       syncStickyToolbar();
       syncStickySelectionClass();
       return;
@@ -4058,15 +4300,20 @@ function showStickyCreateEffect(stickyId) {
   stickyEl.classList.remove("sticky-peeling-on");
   void stickyEl.offsetWidth;
   stickyEl.classList.add("sticky-peeling-on");
+  // CSS peel uses z-index:100000; after peel, restore model z (already highest at create).
+  const finishPeel = () => {
+    stickyEl.classList.remove("sticky-peeling-on");
+    const note = stickies.find((x) => x.id === stickyId);
+    if (note) stickyEl.style.zIndex = String(note.z);
+    stickyEl.removeEventListener("animationend", clearPeel);
+  };
   const clearPeel = (e) => {
     if (e && e.animationName && e.animationName !== "stickyPeelOn") return;
-    stickyEl.classList.remove("sticky-peeling-on");
-    stickyEl.removeEventListener("animationend", clearPeel);
+    finishPeel();
   };
   stickyEl.addEventListener("animationend", clearPeel);
   setTimeout(() => {
-    stickyEl.classList.remove("sticky-peeling-on");
-    stickyEl.removeEventListener("animationend", clearPeel);
+    finishPeel();
   }, 1400);
 
   // Light bulb — child of sticky so it settles with peel motion (same timing family)
@@ -4111,16 +4358,22 @@ function nextStickySpawnPos() {
 
 function addSticky(atCenter) {
   const id = "s" + Date.now();
-  // Prefer live cork toolbar selection (color, noteScale, font, fontSizePx);
-  // Lock defaults still persists stickyDefaults, but create uses what's on the toolbar now.
+  // Prefer live cork toolbar selection (noteScale, font, fontSizePx);
+  // Color comes from last swatch / stickyDefaults (create-color), not painted selection.
   const d = readStickyToolbarState();
+  // Always match the highlighted toolbar swatch (prefs.stickyColor) — never draft/selection.
+  const createColor = getCreateStickyColor();
   const pos = nextStickySpawnPos();
-  // Always assign the absolute highest z so new stickies spawn on top (fix spawn-behind)
-  const maxZ = stickies.reduce((m, s) => Math.max(m, typeof s.z === "number" ? s.z : 0), zCounter);
+  // Absolute highest z among stickies + folders so new notes spawn/peel on top
+  const maxZ = Math.max(
+    zCounter,
+    stickies.reduce((m, s) => Math.max(m, typeof s.z === "number" ? s.z : 0), 0),
+    folders.reduce((m, f) => Math.max(m, typeof f.z === "number" ? f.z : 0), 0)
+  );
   zCounter = maxZ + 1;
   stickies.push({
     id, text: "",
-    color: d.color || "yellow",
+    color: createColor,
     font: d.font || "patrick",
     fontSizePx: resolveFontSizePx(d),
     noteScale: resolveNoteScale(d),
@@ -4159,7 +4412,30 @@ document.getElementById("addProjectBtn").addEventListener("click", () => {
 document.getElementById("addStickyBtn").addEventListener("click", () => {
   document.getElementById("quickMenu").hidden = true; addSticky(true);
 });
-document.getElementById("newStickyBtn").addEventListener("click", () => addSticky(true));
+(function bindNewStickyBtn() {
+  const btn = document.getElementById("newStickyBtn");
+  if (!btn || btn.__newStickyBound) return;
+  btn.__newStickyBound = true;
+  let lastFire = 0;
+  const fire = (e) => {
+    // Capture-phase: one press creates even if a peeling sticky overlaps the button bounds.
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+    const now = Date.now();
+    if (now - lastFire < 450) return; // ignore click twin after pointerdown
+    lastFire = now;
+    addSticky(true);
+  };
+  const sink = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+  };
+  btn.addEventListener("pointerdown", fire, true);
+  btn.addEventListener("pointerup", sink, true);
+  btn.addEventListener("click", sink, true);
+})();
 document.getElementById("newFolderBtn").addEventListener("click", () => addFolder());
 document.getElementById("folderPopoverClose").addEventListener("click", (e) => {
   e.stopPropagation();
@@ -4234,15 +4510,30 @@ document.addEventListener("click", () => { document.getElementById("quickMenu").
   }
   document.querySelectorAll(".cork-toolbar .swatch").forEach((btn) => {
     const applyColor = (e) => {
+      // Capture + stopImmediate so cork deselect / sticky handlers cannot steal the first press.
       e.preventDefault();
       e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
       const color = btn.getAttribute("data-color");
       if (!STICKY_COLORS.includes(color)) return;
-      applyStickyStylePatch({ color: color });
+      // Always update create-color (toolbar highlight / next + Sticky).
+      setCreateStickyColor(color);
+      // When notes are selected, paint them too — same one-click apply as font/size sliders.
+      if (selectedStickyIds.size) {
+        applyStickyStylePatch({ color: color });
+      } else {
+        save();
+      }
     };
-    // pointerdown so first press applies (no focus/click delay)
-    btn.addEventListener("pointerdown", applyColor);
-    btn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); });
+    const sink = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === "function") e.stopImmediatePropagation();
+    };
+    // Capture-phase pointerdown: one press applies even when a sticky is selected / overlapping.
+    btn.addEventListener("pointerdown", applyColor, true);
+    btn.addEventListener("pointerup", sink, true);
+    btn.addEventListener("click", sink, true);
   });
   if (fontSel) {
     fontSel.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -4271,6 +4562,81 @@ document.querySelectorAll(".filter-chip").forEach((btn) => {
     prefs.filter = prefs.filter === f ? null : f; save(); render();
   });
 });
+
+/* ===== Help / How-to tutorial (manual open only — never auto-opens) ===== */
+const HELP_PAGE_COUNT = 5;
+let helpPageIndex = 0;
+
+function isHelpOpen() {
+  const ov = document.getElementById("helpOverlay");
+  return ov && !ov.hidden;
+}
+function applyHelpDontShowPref() {
+  const cb = document.getElementById("helpDontShow");
+  if (cb && cb.checked) {
+    prefs.helpSeen = true;
+    save();
+  }
+}
+function renderHelpPage() {
+  const pages = document.querySelectorAll("#helpModal .help-page");
+  pages.forEach((p) => {
+    const i = Number(p.getAttribute("data-help-page"));
+    p.hidden = i !== helpPageIndex;
+  });
+  const dots = document.getElementById("helpDots");
+  if (dots) {
+    dots.innerHTML = "";
+    for (let i = 0; i < HELP_PAGE_COUNT; i++) {
+      const d = document.createElement("button");
+      d.type = "button";
+      d.className = "help-dot" + (i === helpPageIndex ? " active" : "");
+      d.setAttribute("aria-label", "Tip " + (i + 1));
+      d.addEventListener("click", () => { helpPageIndex = i; renderHelpPage(); });
+      dots.appendChild(d);
+    }
+  }
+  const back = document.getElementById("helpBackBtn");
+  const next = document.getElementById("helpNextBtn");
+  if (back) back.disabled = helpPageIndex <= 0;
+  if (next) next.textContent = helpPageIndex >= HELP_PAGE_COUNT - 1 ? "Done" : "Next";
+}
+function openHelp() {
+  const ov = document.getElementById("helpOverlay");
+  if (!ov) return;
+  helpPageIndex = 0;
+  const cb = document.getElementById("helpDontShow");
+  if (cb) cb.checked = Boolean(prefs.helpSeen);
+  ov.hidden = false;
+  renderHelpPage();
+}
+function closeHelp() {
+  const ov = document.getElementById("helpOverlay");
+  if (!ov || ov.hidden) return;
+  applyHelpDontShowPref();
+  ov.hidden = true;
+}
+document.getElementById("helpBtn").addEventListener("click", () => openHelp());
+document.getElementById("helpCloseBtn").addEventListener("click", () => closeHelp());
+document.getElementById("helpBackBtn").addEventListener("click", () => {
+  if (helpPageIndex > 0) { helpPageIndex -= 1; renderHelpPage(); }
+});
+document.getElementById("helpNextBtn").addEventListener("click", () => {
+  if (helpPageIndex >= HELP_PAGE_COUNT - 1) { closeHelp(); return; }
+  helpPageIndex += 1;
+  renderHelpPage();
+});
+document.getElementById("helpOverlay").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("helpOverlay")) closeHelp();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (!isHelpOpen()) return;
+  e.preventDefault();
+  e.stopPropagation();
+  closeHelp();
+}, true);
+
 document.getElementById("exportBtn").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(currentState(), null, 2)], { type: "application/json" });
   const a = document.createElement("a");
@@ -4329,7 +4695,7 @@ document.getElementById("clearTodayBtn").addEventListener("click", () => {
   cards.forEach((c) => { c.today = false; }); save(); render();
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
-  if (!confirm("Reset to the default projects? This clears local project edits (stickies/archive kept).")) return;
+  if (!confirm("Clear all projects on this board? Stickies, folders, and archive are kept.")) return;
   cards = normalize(cloneDefaults()); selectOnlyProject(null); save(); render();
 });
 
