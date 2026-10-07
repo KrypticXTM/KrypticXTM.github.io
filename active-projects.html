@@ -4982,7 +4982,6 @@ window.addEventListener("resize", () => {
 
 bindTodayDrop();
 applyState(load());
-if (!cards.length) cards = normalize(cloneDefaults());
 save();
 render();
 if (migrateStickyCoordsToCork()) { save(); renderStickies(); bindStickyInteractions(); }
